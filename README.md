@@ -1,6 +1,8 @@
 # RiceDB Python Client
 
-A Python client for connecting to [RiceDB](https://github.com/your-org/ricedb), a high-performance vector-graph database.
+A pure Python client for connecting to and interacting with [RiceDB](https://github.com/your-org/ricedb), a high-performance vector-graph database.
+
+> **Note:** This package is **only** the client library. You must have a running instance of the RiceDB server to use this client.
 
 ## Features
 
@@ -33,6 +35,7 @@ pip install ricedb[all]
 from ricedb import RiceDBClient
 
 # Connect to server (auto-detects transport)
+# Ensure your RiceDB server is running on localhost
 client = RiceDBClient("localhost")
 
 # Insert a document
@@ -144,15 +147,19 @@ results = client.search_text("secret", user_id=100)  # Returns documents
 
 ## Server Setup
 
+This client requires a RiceDB server. Please follow the instructions in the [main RiceDB repository](https://github.com/your-org/ricedb) to install and start the server.
+
+Generally, you will run something like:
+
 ### HTTP Server
 ```bash
-cd /path/to/ricedb
+# From the RiceDB server repository
 cargo run --example http_server --features http-server
 ```
 
 ### gRPC Server
 ```bash
-cd /path/to/ricedb
+# From the RiceDB server repository
 cargo run --bin ricedb-server-grpc --features grpc-server
 ```
 
@@ -182,22 +189,34 @@ See the [examples](examples/) directory for more detailed examples:
 
 ## Development
 
+This project uses `uv` for dependency management and `ruff`/`pyrefly` for code quality.
+
+### Prerequisites
+
+- [uv](https://github.com/astral-sh/uv)
+
 ### Setup
 ```bash
-git clone https://github.com/your-org/ricedb
-cd ricedb/ricedb-python
-pip install -e ".[dev]"
+git clone https://github.com/your-org/ricedb-python
+cd ricedb-python
+make setup
 ```
 
 ### Running Tests
 ```bash
-pytest
+make test
 ```
 
-### Code Formatting
+### Code Quality
 ```bash
-black src tests
-flake8 src tests
+# Format code
+make format
+
+# Lint code
+make lint
+
+# Run all checks (format, lint, test)
+make check
 ```
 
 ## License
@@ -210,7 +229,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Run the test suite
+5. Run `make check` to ensure quality
 6. Submit a pull request
 
 ## Support
