@@ -1,14 +1,15 @@
 """Tests for RiceDB exceptions."""
 
 import pytest
+
 from ricedb.exceptions import (
-    RiceDBError,
+    AuthenticationError,
     ConnectionError,
     InsertError,
+    RiceDBError,
     SearchError,
-    AuthenticationError,
+    TransportError,
     ValidationError,
-    TransportError
 )
 
 

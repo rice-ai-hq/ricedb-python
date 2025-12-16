@@ -3,7 +3,7 @@ Base abstract class for RiceDB clients.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 class BaseRiceDBClient(ABC):
@@ -65,9 +65,7 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def search(
-        self, vector: List[float], user_id: int, k: int = 10
-    ) -> List[Dict[str, Any]]:
+    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
@@ -201,9 +199,7 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def check_permission(
-        self, node_id: int, user_id: int, permission_type: str
-    ) -> bool:
+    def check_permission(self, node_id: int, user_id: int, permission_type: str) -> bool:
         """Check if a user has a specific permission on a node.
 
         Args:

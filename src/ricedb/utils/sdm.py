@@ -2,11 +2,12 @@
 Sparse Distributed Memory (SDM) utilities.
 """
 
-from typing import List, Union
 import random
+from typing import List, Union
 
 ADDRESS_SIZE_U64 = 16
 ADDRESS_SIZE_BITS = ADDRESS_SIZE_U64 * 64
+
 
 class BitVector:
     """A 1024-bit vector used for SDM addresses and data."""
@@ -25,7 +26,7 @@ class BitVector:
             self.chunks = list(chunks)
 
     @classmethod
-    def random(cls) -> 'BitVector':
+    def random(cls) -> "BitVector":
         """Create a random BitVector."""
         chunks = [random.getrandbits(64) for _ in range(ADDRESS_SIZE_U64)]
         return cls(chunks)
@@ -34,7 +35,7 @@ class BitVector:
         """Convert to list of u64 chunks."""
         return self.chunks
 
-    def hamming_distance(self, other: 'BitVector') -> int:
+    def hamming_distance(self, other: "BitVector") -> int:
         """Calculate Hamming distance to another BitVector."""
         distance = 0
         for i in range(ADDRESS_SIZE_U64):

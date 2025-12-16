@@ -1,14 +1,15 @@
 """Tests for validation utilities."""
 
-import pytest
 import numpy as np
+import pytest
+
 from ricedb.utils.validation import (
-    validate_vector,
+    sanitize_metadata,
     validate_metadata,
     validate_node_id,
-    validate_user_id,
     validate_search_params,
-    sanitize_metadata
+    validate_user_id,
+    validate_vector,
 )
 
 
@@ -63,6 +64,7 @@ class TestValidation:
 
     def test_validate_metadata_non_serializable(self):
         """Test metadata validation with non-serializable values."""
+
         # Custom object
         class CustomObject:
             pass
@@ -120,7 +122,7 @@ class TestValidation:
             123: "numeric key",
             "description": None,
             "tags": ["tag1", "tag2"],
-            "active": True
+            "active": True,
         }
 
         sanitized = sanitize_metadata(metadata)

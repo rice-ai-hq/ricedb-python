@@ -2,7 +2,8 @@
 Validation utilities for RiceDB client.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 
 
@@ -48,9 +49,10 @@ def validate_metadata(metadata: Dict[str, Any]) -> None:
     # Check for JSON-serializable values
     try:
         import json
+
         json.dumps(metadata)
     except (TypeError, ValueError) as e:
-        raise ValueError(f"Metadata must be JSON-serializable: {e}")
+        raise ValueError(f"Metadata must be JSON-serializable: {e}") from e
 
 
 def validate_node_id(node_id: int) -> None:

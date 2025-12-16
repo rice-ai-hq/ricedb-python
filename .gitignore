@@ -16,3 +16,13 @@ chroma_db/
 *.pkl
 *.pth
 .DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+junit.xml
+
+# Distribution / Packaging
+.tox/

@@ -3,12 +3,14 @@ gRPC client implementation for RiceDB.
 """
 
 import json
+from typing import Any, Dict, Iterator, List, Optional
+
 import grpc
-from typing import List, Dict, Any, Iterator, Optional
-from .base_client import BaseRiceDBClient
-from ..exceptions import ConnectionError, InsertError, SearchError, RiceDBError
+
+from ..exceptions import ConnectionError, InsertError, RiceDBError, SearchError
 from ..protobuf import ricedb_pb2, ricedb_pb2_grpc
 from ..utils import BitVector
+from .base_client import BaseRiceDBClient
 
 
 class GrpcRiceDBClient(BaseRiceDBClient):
@@ -62,9 +64,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             self._connected = True
             return True
         except grpc.RpcError as e:
-            raise ConnectionError(
-                f"Failed to connect to RiceDB gRPC server: {e.details()}"
-            )
+            raise ConnectionError(f"Failed to connect to RiceDB gRPC server: {e.details()}") from e
 
     def disconnect(self):
         """Disconnect from the RiceDB server."""
@@ -85,7 +85,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             response = self.stub.Health(ricedb_pb2.HealthRequest())
             return {"status": response.status, "version": response.version}
         except grpc.RpcError as e:
-            raise ConnectionError(f"Health check failed: {e.details()}")
+            raise ConnectionError(f"Health check failed: {e.details()}") from e
 
     def insert(
         self,
@@ -126,11 +126,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 "message": response.message,
             }
         except grpc.RpcError as e:
-            raise InsertError(f"Insert request failed: {e.details()}")
+            raise InsertError(f"Insert request failed: {e.details()}") from e
 
-    def search(
-        self, vector: List[float], user_id: int, k: int = 10
-    ) -> List[Dict[str, Any]]:
+    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
@@ -160,7 +158,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 )
             return results
         except grpc.RpcError as e:
-            raise SearchError(f"Search request failed: {e.details()}")
+            raise SearchError(f"Search request failed: {e.details()}") from e
 
     def batch_insert(
         self, documents: List[Dict[str, Any]], user_id: Optional[int] = None
@@ -191,7 +189,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             response = self.stub.BatchInsert(request_generator())
             return {"count": response.count, "node_ids": list(response.node_ids)}
         except grpc.RpcError as e:
-            raise InsertError(f"Batch insert request failed: {e.details()}")
+            raise InsertError(f"Batch insert request failed: {e.details()}") from e
 
     def stream_search(
         self, vector: List[float], user_id: int, k: int = 10
@@ -220,11 +218,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                     "metadata": metadata,
                 }
         except grpc.RpcError as e:
-            raise SearchError(f"Stream search request failed: {e.details()}")
+            raise SearchError(f"Stream search request failed: {e.details()}") from e
 
-    def write_memory(
-        self, address: BitVector, data: BitVector, user_id: int = 1
-    ) -> Dict[str, Any]:
+    def write_memory(self, address: BitVector, data: BitVector, user_id: int = 1) -> Dict[str, Any]:
         """Write to SDM."""
         if not self.stub:
             raise ConnectionError("Not connected to server")
@@ -238,7 +234,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             response = self.stub.WriteMemory(request)
             return {"success": response.success, "message": response.message}
         except grpc.RpcError as e:
-            raise RiceDBError(f"SDM write failed: {e.details()}")
+            raise RiceDBError(f"SDM write failed: {e.details()}") from e
 
     def read_memory(self, address: BitVector, user_id: int = 1) -> BitVector:
         """Read from SDM."""
@@ -252,7 +248,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             response = self.stub.ReadMemory(request)
             return BitVector(list(response.data.chunks))
         except grpc.RpcError as e:
-            raise RiceDBError(f"SDM read failed: {e.details()}")
+            raise RiceDBError(f"SDM read failed: {e.details()}") from e
 
     def batch_insert_texts(
         self,
@@ -309,9 +305,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             "Please use HTTP transport or add ACL support to protobuf definitions."
         )
 
-    def check_permission(
-        self, node_id: int, user_id: int, permission_type: str
-    ) -> bool:
+    def check_permission(self, node_id: int, user_id: int, permission_type: str) -> bool:
         """Check if a user has a specific permission on a node.
 
         Note: ACL operations are not yet supported in gRPC transport.

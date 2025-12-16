@@ -1,12 +1,13 @@
 """Tests for embedding generators."""
 
-import pytest
 import numpy as np
+import pytest
+
 from ricedb.utils.embeddings import (
     DummyEmbeddingGenerator,
-    SentenceTransformersEmbeddingGenerator,
+    HuggingFaceEmbeddingGenerator,
     OpenAIEmbeddingGenerator,
-    HuggingFaceEmbeddingGenerator
+    SentenceTransformersEmbeddingGenerator,
 )
 
 
@@ -71,9 +72,7 @@ class TestEmbeddingGeneratorsOptional:
     def test_sentence_transformers_import(self):
         """Test SentenceTransformers embedding generator if available."""
         try:
-            gen = SentenceTransformersEmbeddingGenerator(
-                model_name="all-MiniLM-L6-v2"
-            )
+            gen = SentenceTransformersEmbeddingGenerator(model_name="all-MiniLM-L6-v2")
             embedding = gen.encode("test")
             assert isinstance(embedding, list)
             assert len(embedding) > 0
@@ -85,7 +84,7 @@ class TestEmbeddingGeneratorsOptional:
         try:
             gen = OpenAIEmbeddingGenerator(
                 model="text-embedding-ada-002",
-                api_key="dummy-key"  # Will fail but tests import
+                api_key="dummy-key",  # Will fail but tests import
             )
             assert gen.model == "text-embedding-ada-002"
         except ImportError:
@@ -94,9 +93,7 @@ class TestEmbeddingGeneratorsOptional:
     def test_huggingface_import(self):
         """Test HuggingFace embedding generator if available."""
         try:
-            gen = HuggingFaceEmbeddingGenerator(
-                model_name="sentence-transformers/all-MiniLM-L6-v2"
-            )
+            gen = HuggingFaceEmbeddingGenerator(model_name="sentence-transformers/all-MiniLM-L6-v2")
             assert gen.model_name == "sentence-transformers/all-MiniLM-L6-v2"
         except ImportError:
             pytest.skip("transformers not installed")
