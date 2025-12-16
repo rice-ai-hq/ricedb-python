@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ricedb"
+version = "0.1.0"
+description = "Python client for RiceDB database"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "RiceDB Contributors" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.8"
+dependencies = ["requests>=2.32.5", "numpy>=1.20.0"]
+
+[project.optional-dependencies]
+grpc = ["grpcio>=1.76.0", "grpcio-tools>=1.76.0"]
+embeddings = ["sentence-transformers>=5.2.0", "torch>=2.0.0"]
+openai = ["openai>=1.0.0"]
+all = ["ricedb[grpc,embeddings,openai]"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0",
+    "flake8>=6.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/ricedb"
+Repository = "https://github.com/your-org/ricedb"
+Documentation = "https://ricedb.readthedocs.io"
+"Bug Tracker" = "https://github.com/your-org/ricedb/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38']
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=src/ricedb --cov-report=term-missing"
