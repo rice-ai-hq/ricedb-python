@@ -7,12 +7,11 @@ name = "ricedb"
 version = "0.1.0"
 description = "Python client for RiceDB database"
 readme = "README.md"
-license = { text = "Apache-2.0" }
-authors = [{ name = "RiceDB Contributors" }]
+license = { text = "Proprietary" }
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
