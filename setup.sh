@@ -11,11 +11,18 @@ if [ ! -f "pyproject.toml" ]; then
     exit 1
 fi
 
+# Check if uv is installed
+if ! command -v uv &> /dev/null; then
+    echo "❌ Error: uv is not installed. Please install it first:"
+    echo "   curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
+fi
+
 # Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
-    echo "1️⃣  Creating virtual environment..."
-    python3 -m venv venv
-    echo "   ✓ Created venv"
+if [ ! -d ".venv" ]; then
+    echo "1️⃣  Creating virtual environment with uv..."
+    uv venv
+    echo "   ✓ Created .venv"
 else
     echo "1️⃣  Virtual environment already exists"
 fi
@@ -23,27 +30,22 @@ fi
 # Activate virtual environment
 echo ""
 echo "2️⃣  Activating virtual environment..."
-source venv/bin/activate
-echo "   ✓ Activated venv"
-
-# Upgrade pip
-echo ""
-echo "3️⃣  Upgrading pip..."
-pip install --upgrade pip
+source .venv/bin/activate
+echo "   ✓ Activated .venv"
 
 # Install the package in development mode
 echo ""
-echo "4️⃣  Installing RiceDB client..."
-pip install -e ".[dev]"
+echo "3️⃣  Installing RiceDB client with uv..."
+uv pip install -e ".[dev,grpc]"
 
 # Check installation
 echo ""
-echo "5️⃣  Verifying installation..."
+echo "4️⃣  Verifying installation..."
 python -c "import ricedb; print(f'   ✓ RiceDB version {ricedb.__version__} installed')"
 
 # Show example usage
 echo ""
-echo "6️⃣  Example usage:"
+echo "5️⃣  Example usage:"
 echo "   python examples/basic_usage.py"
 echo ""
 echo "   Or in Python:"
