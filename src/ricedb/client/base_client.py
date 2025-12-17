@@ -3,7 +3,7 @@ Base abstract class for RiceDB clients.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import List, Dict, Any, Optional
 
 
 class BaseRiceDBClient(ABC):
@@ -44,6 +44,44 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
+    def login(self, username: str, password: str) -> str:
+        """Login to the server.
+
+        Args:
+            username: Username
+            password: Password
+
+        Returns:
+            Access token
+        """
+        pass
+
+    @abstractmethod
+    def register(self, username: str, password: str) -> int:
+        """Register a new user.
+
+        Args:
+            username: Username
+            password: Password
+
+        Returns:
+            User ID
+        """
+        pass
+
+    @abstractmethod
+    def delete(self, node_id: int) -> bool:
+        """Delete a document by ID.
+
+        Args:
+            node_id: Node ID to delete
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
     def insert(
         self,
         node_id: int,
@@ -65,7 +103,9 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, vector: List[float], user_id: int, k: int = 10
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
@@ -199,7 +239,9 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def check_permission(self, node_id: int, user_id: int, permission_type: str) -> bool:
+    def check_permission(
+        self, node_id: int, user_id: int, permission_type: str
+    ) -> bool:
         """Check if a user has a specific permission on a node.
 
         Args:

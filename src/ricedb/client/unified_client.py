@@ -2,12 +2,11 @@
 Unified client interface that automatically selects the best transport.
 """
 
-from typing import Any, Dict, List, Optional
-
-from ..exceptions import ConnectionError, RiceDBError
+from typing import Optional, List, Dict, Any
 from .base_client import BaseRiceDBClient
-from .grpc_client import GrpcRiceDBClient
 from .http_client import HTTPRiceDBClient
+from .grpc_client import GrpcRiceDBClient
+from ..exceptions import ConnectionError, RiceDBError
 
 
 class RiceDBClient(BaseRiceDBClient):
@@ -47,7 +46,9 @@ class RiceDBClient(BaseRiceDBClient):
 
         # Validate transport type
         if self.transport_type not in ["auto", "http", "grpc"]:
-            raise ValueError(f"Invalid transport type: {transport}. Use 'auto', 'http', or 'grpc'")
+            raise ValueError(
+                f"Invalid transport type: {transport}. Use 'auto', 'http', or 'grpc'"
+            )
 
     def _get_client(self) -> BaseRiceDBClient:
         """Get or create the appropriate client instance."""
@@ -57,7 +58,9 @@ class RiceDBClient(BaseRiceDBClient):
         if self.transport_type == "auto":
             # Try gRPC first, then HTTP
             try:
-                self._client = GrpcRiceDBClient(host=self.host, port=self.grpc_port, **self.kwargs)
+                self._client = GrpcRiceDBClient(
+                    host=self.host, port=self.grpc_port, **self.kwargs
+                )
                 if self._client.connect():
                     print(f"✓ Connected via gRPC to {self.host}:{self.grpc_port}")
                     return self._client
@@ -66,7 +69,9 @@ class RiceDBClient(BaseRiceDBClient):
 
             # Fall back to HTTP
             try:
-                self._client = HTTPRiceDBClient(host=self.host, port=self.http_port, **self.kwargs)
+                self._client = HTTPRiceDBClient(
+                    host=self.host, port=self.http_port, **self.kwargs
+                )
                 if self._client.connect():
                     print(f"✓ Connected via HTTP to {self.host}:{self.http_port}")
                     return self._client
@@ -80,7 +85,9 @@ class RiceDBClient(BaseRiceDBClient):
 
         elif self.transport_type == "grpc":
             try:
-                self._client = GrpcRiceDBClient(host=self.host, port=self.grpc_port, **self.kwargs)
+                self._client = GrpcRiceDBClient(
+                    host=self.host, port=self.grpc_port, **self.kwargs
+                )
             except ImportError as e:
                 raise RiceDBError(
                     "gRPC transport requires grpcio package. "
@@ -88,7 +95,9 @@ class RiceDBClient(BaseRiceDBClient):
                 ) from e
 
         elif self.transport_type == "http":
-            self._client = HTTPRiceDBClient(host=self.host, port=self.http_port, **self.kwargs)
+            self._client = HTTPRiceDBClient(
+                host=self.host, port=self.http_port, **self.kwargs
+            )
 
         return self._client
 
@@ -125,6 +134,50 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.health()
 
+    def login(self, username: str, password: str) -> str:
+        """Login to the server.
+
+        Args:
+            username: Username
+            password: Password
+
+        Returns:
+            Access token
+        """
+        client = self._get_client()
+        return client.login(username, password)
+
+    def register(self, username: str, password: str) -> int:
+        """Register a new user.
+
+        Args:
+            username: Username
+            password: Password
+
+        Returns:
+            User ID
+        """
+        client = self._get_client()
+        return client.register(username, password)
+
+    def delete(self, node_id: int) -> bool:
+        """Delete a document by ID.
+
+        Args:
+            node_id: Node ID to delete
+
+        Returns:
+            True if successful
+        """
+        client = self._get_client()
+        # gRPC delete doesn't take user_id, HTTP takes it but ignores it.
+        # We'll just pass node_id to comply with BaseRiceDBClient signature which we should have updated to include user_id=1?
+        # BaseRiceDBClient.delete(node_id) -> bool.
+        # HTTPRiceDBClient.delete(node_id, user_id=1) -> bool.
+        # GrpcRiceDBClient.delete(node_id) -> bool.
+        # So passing just node_id is safe if Grpc client doesn't require user_id.
+        return client.delete(node_id)
+
     def insert(
         self,
         node_id: int,
@@ -146,7 +199,9 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.insert(node_id, vector, metadata, user_id)
 
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, vector: List[float], user_id: int, k: int = 10
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
@@ -257,7 +312,9 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.revoke_permission(node_id, user_id)
 
-    def check_permission(self, node_id: int, user_id: int, permission_type: str) -> bool:
+    def check_permission(
+        self, node_id: int, user_id: int, permission_type: str
+    ) -> bool:
         """Check if a user has a specific permission on a node.
 
         Args:

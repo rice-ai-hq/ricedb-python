@@ -2,13 +2,11 @@
 HTTP client implementation for RiceDB.
 """
 
-from typing import Any, Dict, List, Optional
-
 import requests
-
-from ..exceptions import ConnectionError, InsertError, RiceDBError, SearchError
-from ..utils import BitVector
+from typing import List, Dict, Any, Optional
 from .base_client import BaseRiceDBClient
+from ..exceptions import ConnectionError, InsertError, SearchError, RiceDBError
+from ..utils import BitVector
 
 
 class HTTPRiceDBClient(BaseRiceDBClient):
@@ -26,6 +24,73 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         self.base_url = f"http://{host}:{port}"
         self.timeout = timeout
         self.session = requests.Session()
+        self.token = None
+
+    def login(self, username: str, password: str) -> str:
+        """Login to the server.
+
+        Args:
+            username: Username
+            password: Password
+
+        Returns:
+            Access token
+        """
+        try:
+            response = self.session.post(
+                f"{self.base_url}/auth/login",
+                json={"username": username, "password": password},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            self.token = data["token"]
+            self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+            return self.token
+        except requests.RequestException as e:
+            raise AuthenticationError(f"Login failed: {e}")
+
+    def register(self, username: str, password: str) -> int:
+        """Register a new user.
+
+        Args:
+            username: Username
+            password: Password
+
+        Returns:
+            User ID
+        """
+        try:
+            response = self.session.post(
+                f"{self.base_url}/auth/register",
+                json={"username": username, "password": password},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data["user_id"]
+        except requests.RequestException as e:
+            raise AuthenticationError(f"Registration failed: {e}")
+
+    def delete(self, node_id: int, user_id: int = 1) -> bool:
+        """Delete a document by ID.
+
+        Args:
+            node_id: Node ID to delete
+            user_id: User ID (unused, kept for compatibility)
+
+        Returns:
+            True if successful
+        """
+        try:
+            response = self.session.delete(
+                f"{self.base_url}/node/{node_id}",
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to delete node: {e}")
 
     def connect(self) -> bool:
         """Connect to the RiceDB server.
@@ -38,7 +103,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             self._connected = response.status_code == 200
             return self._connected
         except requests.RequestException as e:
-            raise ConnectionError(f"Failed to connect to RiceDB server: {e}") from e
+            raise ConnectionError(f"Failed to connect to RiceDB server: {e}")
 
     def disconnect(self):
         """Disconnect from the RiceDB server."""
@@ -57,7 +122,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise ConnectionError(f"Health check failed: {e}") from e
+            raise ConnectionError(f"Health check failed: {e}")
 
     def insert(
         self,
@@ -96,9 +161,11 @@ class HTTPRiceDBClient(BaseRiceDBClient):
 
             return result
         except requests.RequestException as e:
-            raise InsertError(f"Insert request failed: {e}") from e
+            raise InsertError(f"Insert request failed: {e}")
 
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, vector: List[float], user_id: int, k: int = 10
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
@@ -118,7 +185,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise SearchError(f"Search request failed: {e}") from e
+            raise SearchError(f"Search request failed: {e}")
 
     def batch_insert(
         self, documents: List[Dict[str, Any]], user_id: Optional[int] = None
@@ -151,9 +218,11 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise InsertError(f"Batch insert request failed: {e}") from e
+            raise InsertError(f"Batch insert request failed: {e}")
 
-    def write_memory(self, address: BitVector, data: BitVector, user_id: int = 1) -> Dict[str, Any]:
+    def write_memory(
+        self, address: BitVector, data: BitVector, user_id: int = 1
+    ) -> Dict[str, Any]:
         """Write to Sparse Distributed Memory."""
         try:
             response = self.session.post(
@@ -168,7 +237,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise RiceDBError(f"SDM write failed: {e}") from e
+            raise RiceDBError(f"SDM write failed: {e}")
 
     def read_memory(self, address: BitVector, user_id: int = 1) -> BitVector:
         """Read from Sparse Distributed Memory."""
@@ -182,7 +251,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             result = response.json()
             return BitVector(result["data"])
         except requests.RequestException as e:
-            raise RiceDBError(f"SDM read failed: {e}") from e
+            raise RiceDBError(f"SDM read failed: {e}")
 
     def get_metadata(self, node_id: int) -> Dict[str, Any]:
         """Get metadata for a specific node.
@@ -194,11 +263,13 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             Node metadata
         """
         try:
-            response = self.session.get(f"{self.base_url}/node/{node_id}", timeout=self.timeout)
+            response = self.session.get(
+                f"{self.base_url}/node/{node_id}", timeout=self.timeout
+            )
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise RiceDBError(f"Failed to get node metadata: {e}") from e
+            raise RiceDBError(f"Failed to get node metadata: {e}")
 
     def update_metadata(
         self, node_id: int, metadata: Dict[str, Any], user_id: int = 1
@@ -222,28 +293,20 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise RiceDBError(f"Failed to update node metadata: {e}") from e
+            raise RiceDBError(f"Failed to update node metadata: {e}")
 
     def delete_node(self, node_id: int, user_id: int = 1) -> Dict[str, Any]:
         """Delete a specific node.
 
         Args:
             node_id: Node ID to delete
-            user_id: User ID for ACL
+            user_id: User ID (unused)
 
         Returns:
             Delete response
         """
-        try:
-            response = self.session.delete(
-                f"{self.base_url}/node/{node_id}",
-                json={"user_id": user_id},
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            raise RiceDBError(f"Failed to delete node: {e}") from e
+        success = self.delete(node_id, user_id)
+        return {"success": success, "message": f"Deleted node {node_id}"}
 
     def grant_permission(
         self, node_id: int, user_id: int, permissions: Dict[str, bool]
@@ -271,7 +334,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise RiceDBError(f"Failed to grant permission: {e}") from e
+            raise RiceDBError(f"Failed to grant permission: {e}")
 
     def revoke_permission(self, node_id: int, user_id: int) -> Dict[str, Any]:
         """Revoke all permissions for a user on a node.
@@ -292,9 +355,11 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise RiceDBError(f"Failed to revoke permission: {e}") from e
+            raise RiceDBError(f"Failed to revoke permission: {e}")
 
-    def check_permission(self, node_id: int, user_id: int, permission_type: str) -> bool:
+    def check_permission(
+        self, node_id: int, user_id: int, permission_type: str
+    ) -> bool:
         """Check if a user has a specific permission on a node.
 
         Args:
@@ -319,7 +384,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             result = response.json()
             return result.get("allowed", False)
         except requests.RequestException as e:
-            raise RiceDBError(f"Failed to check permission: {e}") from e
+            raise RiceDBError(f"Failed to check permission: {e}")
 
     def batch_grant(self, grants: List[tuple]) -> Dict[str, Any]:
         """Grant permissions to multiple users/nodes in batch.
@@ -413,10 +478,11 @@ class HTTPRiceDBClient(BaseRiceDBClient):
                 insert_response["acl_grants"] = grant_response
 
             insert_response["acl_users"] = [
-                {"user_id": uid, "permissions": perms} for uid, perms in user_permissions
+                {"user_id": uid, "permissions": perms}
+                for uid, perms in user_permissions
             ]
 
             return insert_response
 
         except (InsertError, RiceDBError) as e:
-            raise InsertError(f"Failed to insert with ACL: {e}") from e
+            raise InsertError(f"Failed to insert with ACL: {e}")

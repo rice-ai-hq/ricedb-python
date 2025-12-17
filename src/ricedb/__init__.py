@@ -7,11 +7,11 @@ Supports both HTTP and gRPC transports.
 
 from .client import RiceDBClient
 from .exceptions import (
-    AuthenticationError,
+    RiceDBError,
     ConnectionError,
     InsertError,
-    RiceDBError,
     SearchError,
+    AuthenticationError,
 )
 
 __version__ = "0.1.0"

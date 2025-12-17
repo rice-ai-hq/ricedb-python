@@ -3,14 +3,12 @@ gRPC client implementation for RiceDB.
 """
 
 import json
-from typing import Any, Dict, Iterator, List, Optional
-
 import grpc
-
-from ..exceptions import ConnectionError, InsertError, RiceDBError, SearchError
+from typing import List, Dict, Any, Iterator, Optional
+from .base_client import BaseRiceDBClient
+from ..exceptions import ConnectionError, InsertError, SearchError, RiceDBError
 from ..protobuf import ricedb_pb2, ricedb_pb2_grpc
 from ..utils import BitVector
-from .base_client import BaseRiceDBClient
 
 
 class GrpcRiceDBClient(BaseRiceDBClient):
@@ -37,6 +35,8 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         self.address = f"{host}:{port}"
         self.channel = None
         self.stub = None
+        self.token = None
+        self.user_id = None
 
         # gRPC channel options
         self.options = [
@@ -48,6 +48,26 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             ("grpc.http2.min_time_between_pings_ms", 10000),
             ("grpc.http2.min_ping_interval_without_data_ms", 300000),
         ]
+
+    def _metadata(self):
+        """Get authentication metadata"""
+        if self.token:
+            return [('authorization', f'Bearer {self.token}')]
+        return []
+
+    def login(self, username: str, password: str) -> int:
+        """Login to get access token."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.LoginRequest(username=username, password=password)
+            response = self.stub.Login(request)
+            self.token = response.token
+            self.user_id = response.user_id
+            return self.user_id
+        except grpc.RpcError as e:
+            raise ConnectionError(f"Login failed: {e.details()}")
 
     def connect(self) -> bool:
         """Connect to the RiceDB server.
@@ -64,7 +84,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             self._connected = True
             return True
         except grpc.RpcError as e:
-            raise ConnectionError(f"Failed to connect to RiceDB gRPC server: {e.details()}") from e
+            raise ConnectionError(
+                f"Failed to connect to RiceDB gRPC server: {e.details()}"
+            )
 
     def disconnect(self):
         """Disconnect from the RiceDB server."""
@@ -85,7 +107,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             response = self.stub.Health(ricedb_pb2.HealthRequest())
             return {"status": response.status, "version": response.version}
         except grpc.RpcError as e:
-            raise ConnectionError(f"Health check failed: {e.details()}") from e
+            raise ConnectionError(f"Health check failed: {e.details()}")
 
     def insert(
         self,
@@ -115,7 +137,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 metadata=json.dumps(metadata).encode("utf-8"),
                 user_id=user_id,
             )
-            response = self.stub.Insert(request)
+            response = self.stub.Insert(request, metadata=self._metadata())
 
             if not response.success:
                 raise InsertError(response.message)
@@ -126,9 +148,11 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 "message": response.message,
             }
         except grpc.RpcError as e:
-            raise InsertError(f"Insert request failed: {e.details()}") from e
+            raise InsertError(f"Insert request failed: {e.details()}")
 
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, vector: List[float], user_id: int, k: int = 10
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
@@ -144,7 +168,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
 
         try:
             request = ricedb_pb2.SearchRequest(vector=vector, user_id=user_id, k=k)
-            response = self.stub.Search(request)
+            response = self.stub.Search(request, metadata=self._metadata())
 
             results = []
             for result in response.results:
@@ -158,7 +182,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 )
             return results
         except grpc.RpcError as e:
-            raise SearchError(f"Search request failed: {e.details()}") from e
+            raise SearchError(f"Search request failed: {e.details()}")
 
     def batch_insert(
         self, documents: List[Dict[str, Any]], user_id: Optional[int] = None
@@ -186,10 +210,10 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 )
 
         try:
-            response = self.stub.BatchInsert(request_generator())
+            response = self.stub.BatchInsert(request_generator(), metadata=self._metadata())
             return {"count": response.count, "node_ids": list(response.node_ids)}
         except grpc.RpcError as e:
-            raise InsertError(f"Batch insert request failed: {e.details()}") from e
+            raise InsertError(f"Batch insert request failed: {e.details()}")
 
     def stream_search(
         self, vector: List[float], user_id: int, k: int = 10
@@ -210,7 +234,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         try:
             request = ricedb_pb2.SearchRequest(vector=vector, user_id=user_id, k=k)
 
-            for result in self.stub.StreamSearch(request):
+            for result in self.stub.StreamSearch(request, metadata=self._metadata()):
                 metadata = json.loads(result.metadata.decode("utf-8"))
                 yield {
                     "id": result.id,
@@ -218,9 +242,11 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                     "metadata": metadata,
                 }
         except grpc.RpcError as e:
-            raise SearchError(f"Stream search request failed: {e.details()}") from e
+            raise SearchError(f"Stream search request failed: {e.details()}")
 
-    def write_memory(self, address: BitVector, data: BitVector, user_id: int = 1) -> Dict[str, Any]:
+    def write_memory(
+        self, address: BitVector, data: BitVector, user_id: int = 1
+    ) -> Dict[str, Any]:
         """Write to SDM."""
         if not self.stub:
             raise ConnectionError("Not connected to server")
@@ -231,10 +257,10 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 data=ricedb_pb2.BitVector(chunks=data.to_list()),
                 user_id=user_id,
             )
-            response = self.stub.WriteMemory(request)
+            response = self.stub.WriteMemory(request, metadata=self._metadata())
             return {"success": response.success, "message": response.message}
         except grpc.RpcError as e:
-            raise RiceDBError(f"SDM write failed: {e.details()}") from e
+            raise RiceDBError(f"SDM write failed: {e.details()}")
 
     def read_memory(self, address: BitVector, user_id: int = 1) -> BitVector:
         """Read from SDM."""
@@ -245,10 +271,10 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             request = ricedb_pb2.ReadMemoryRequest(
                 address=ricedb_pb2.BitVector(chunks=address.to_list()), user_id=user_id
             )
-            response = self.stub.ReadMemory(request)
+            response = self.stub.ReadMemory(request, metadata=self._metadata())
             return BitVector(list(response.data.chunks))
         except grpc.RpcError as e:
-            raise RiceDBError(f"SDM read failed: {e.details()}") from e
+            raise RiceDBError(f"SDM read failed: {e.details()}")
 
     def batch_insert_texts(
         self,
@@ -281,51 +307,170 @@ class GrpcRiceDBClient(BaseRiceDBClient):
 
         return self.batch_insert(documents)
 
+    def register(self, username: str, password: str) -> int:
+        """Register a new user."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.RegisterRequest(username=username, password=password)
+            response = self.stub.Register(request)
+            return response.user_id
+        except grpc.RpcError as e:
+            raise ConnectionError(f"Registration failed: {e.details()}")
+
+    def get(self, node_id: int) -> Optional[Dict[str, Any]]:
+        """Get a document by ID."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.GetNodeRequest(node_id=node_id)
+            response = self.stub.GetNode(request, metadata=self._metadata())
+            
+            node = response.node
+            metadata = json.loads(node.metadata.decode("utf-8"))
+            return {
+                "id": node.id,
+                "vector": list(node.vector),
+                "metadata": metadata,
+            }
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.NOT_FOUND:
+                return None
+            raise RiceDBError(f"Get failed: {e.details()}")
+
+    def delete(self, node_id: int) -> bool:
+        """Delete a document by ID."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.DeleteNodeRequest(node_id=node_id)
+            response = self.stub.DeleteNode(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Delete failed: {e.details()}")
+
     def grant_permission(
-        self, node_id: int, user_id: int, permissions: Dict[str, bool]
-    ) -> Dict[str, Any]:
-        """Grant permissions to a user for a node.
+        self, node_id: int, target_user_id: int, permissions: Dict[str, bool]
+    ) -> bool:
+        """Grant permissions to a user for a node."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            perms = ricedb_pb2.Permissions(
+                read=permissions.get("read", False),
+                write=permissions.get("write", False),
+                delete=permissions.get("delete", False),
+            )
+            request = ricedb_pb2.GrantPermissionRequest(
+                node_id=node_id,
+                target_user_id=target_user_id,
+                permissions=perms
+            )
+            response = self.stub.GrantPermission(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Grant permission failed: {e.details()}")
 
-        Note: ACL operations are not yet supported in gRPC transport.
-        Please use HTTP transport for ACL operations.
-        """
-        raise RiceDBError(
-            "ACL operations are not supported in gRPC transport. "
-            "Please use HTTP transport or add ACL support to protobuf definitions."
-        )
+    def revoke_permission(self, node_id: int, target_user_id: int) -> bool:
+        """Revoke all permissions for a user on a node."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.RevokePermissionRequest(
+                node_id=node_id,
+                target_user_id=target_user_id
+            )
+            response = self.stub.RevokePermission(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Revoke permission failed: {e.details()}")
 
-    def revoke_permission(self, node_id: int, user_id: int) -> Dict[str, Any]:
-        """Revoke all permissions for a user on a node.
+    def add_edge(self, from_node: int, to_node: int, relation: str, weight: float = 1.0) -> bool:
+        """Add an edge between two nodes."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.AddEdgeRequest(
+                from_=from_node,
+                to=to_node,
+                relation=relation,
+                weight=weight
+            )
+            response = self.stub.AddEdge(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Add edge failed: {e.details()}")
 
-        Note: ACL operations are not yet supported in gRPC transport.
-        Please use HTTP transport for ACL operations.
-        """
-        raise RiceDBError(
-            "ACL operations are not supported in gRPC transport. "
-            "Please use HTTP transport or add ACL support to protobuf definitions."
-        )
+    def get_neighbors(self, node_id: int, relation: Optional[str] = None) -> List[int]:
+        """Get neighbors of a node."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.GetNeighborsRequest(
+                node_id=node_id,
+                relation=relation
+            )
+            response = self.stub.GetNeighbors(request, metadata=self._metadata())
+            return list(response.neighbors)
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Get neighbors failed: {e.details()}")
 
-    def check_permission(self, node_id: int, user_id: int, permission_type: str) -> bool:
-        """Check if a user has a specific permission on a node.
+    def traverse(self, start_node: int, max_depth: int = 1) -> List[int]:
+        """Traverse the graph from a start node."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.TraverseGraphRequest(
+                start=start_node,
+                max_depth=max_depth
+            )
+            response = self.stub.TraverseGraph(request, metadata=self._metadata())
+            return list(response.visited)
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Traverse failed: {e.details()}")
 
-        Note: ACL operations are not yet supported in gRPC transport.
-        Please use HTTP transport for ACL operations.
-        """
-        raise RiceDBError(
-            "ACL operations are not supported in gRPC transport. "
-            "Please use HTTP transport or add ACL support to protobuf definitions."
-        )
-
-    def batch_grant(self, grants: List[tuple]) -> Dict[str, Any]:
-        """Grant permissions to multiple users/nodes in batch.
-
-        Note: ACL operations are not yet supported in gRPC transport.
-        Please use HTTP transport for ACL operations.
-        """
-        raise RiceDBError(
-            "ACL operations are not supported in gRPC transport. "
-            "Please use HTTP transport or add ACL support to protobuf definitions."
-        )
+    def subscribe(
+        self,
+        filter_type: str = "all",
+        node_id: Optional[int] = None,
+        vector: Optional[List[float]] = None,
+        threshold: float = 0.8
+    ) -> Iterator[Dict[str, Any]]:
+        """Subscribe to real-time events."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        
+        try:
+            request = ricedb_pb2.SubscribeRequest(
+                filter_type=filter_type,
+                node_id=node_id,
+                vector=vector,
+                threshold=threshold
+            )
+            
+            for event in self.stub.Subscribe(request, metadata=self._metadata()):
+                result = {
+                    "type": event.type,
+                    "node_id": event.node_id
+                }
+                if event.HasField("node"):
+                    metadata = json.loads(event.node.metadata.decode("utf-8"))
+                    result["node"] = {
+                        "id": event.node.id,
+                        "vector": list(event.node.vector),
+                        "metadata": metadata
+                    }
+                yield result
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Subscribe failed: {e.details()}")
 
     def insert_with_acl(
         self,
