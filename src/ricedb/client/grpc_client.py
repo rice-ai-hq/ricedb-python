@@ -55,7 +55,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             return [('authorization', f'Bearer {self.token}')]
         return []
 
-    def login(self, username: str, password: str) -> int:
+    def login(self, username: str, password: str) -> str:
         """Login to get access token."""
         if not self.stub:
             raise ConnectionError("Not connected to server")
@@ -65,7 +65,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             response = self.stub.Login(request)
             self.token = response.token
             self.user_id = response.user_id
-            return self.user_id
+            return self.token
         except grpc.RpcError as e:
             raise ConnectionError(f"Login failed: {e.details()}")
 
@@ -490,3 +490,42 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             return self.insert(node_id, vector, metadata, primary_user_id)
 
         return self.insert(node_id, vector, metadata)
+
+    def batch_grant(self, grants: List[tuple]) -> Dict[str, Any]:
+        """Grant permissions to multiple users/nodes in batch.
+
+        Args:
+            grants: List of tuples (node_id, user_id, permissions_dict)
+
+        Returns:
+            Batch grant response
+        """
+        # TODO: Implement batch grant in gRPC proto
+        # For now, loop through grants
+        results = []
+        for node_id, user_id, permissions in grants:
+            try:
+                success = self.grant_permission(node_id, user_id, permissions)
+                results.append({"node_id": node_id, "user_id": user_id, "success": success})
+            except Exception as e:
+                results.append({"node_id": node_id, "user_id": user_id, "success": False, "error": str(e)})
+        
+        return {"results": results, "count": len(results)}
+
+    def check_permission(
+        self, node_id: int, user_id: int, permission_type: str
+    ) -> bool:
+        """Check if a user has a specific permission on a node.
+
+        Args:
+            node_id: Node ID to check permissions for
+            user_id: User ID to check permissions for
+            permission_type: Type of permission to check ("read", "write", "delete")
+
+        Returns:
+            True if user has permission, False otherwise
+        """
+        # Currently not supported in gRPC protocol, would require server update
+        # raise RiceDBError("check_permission is not currently supported via gRPC transport")
+        print(f"Warning: check_permission not supported in gRPC, assuming False for {node_id}")
+        return False

@@ -64,7 +64,11 @@ class RiceDBClient(BaseRiceDBClient):
                 if self._client.connect():
                     print(f"✓ Connected via gRPC to {self.host}:{self.grpc_port}")
                     return self._client
-            except (ConnectionError, ImportError):
+            except (ConnectionError, ImportError) as e:
+                print(f"DEBUG: gRPC connection failed: {e}")
+                pass
+            except Exception as e:
+                print(f"DEBUG: Unexpected gRPC error: {e}")
                 pass
 
             # Fall back to HTTP
