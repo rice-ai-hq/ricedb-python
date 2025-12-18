@@ -64,11 +64,13 @@ for result in results:
 ## Transport Options
 
 ### Auto-Detection (Recommended)
+
 ```python
 client = RiceDBClient("localhost")  # Tries gRPC first, falls back to HTTP
 ```
 
 ### Explicit Transport Selection
+
 ```python
 # HTTP only
 client = RiceDBClient("localhost", transport="http", port=3000)
@@ -80,6 +82,7 @@ client = RiceDBClient("localhost", transport="grpc", port=50051)
 ## Embedding Generators
 
 ### Dummy Embeddings (for testing)
+
 ```python
 from ricedb.utils import DummyEmbeddingGenerator
 
@@ -87,6 +90,7 @@ embed_gen = DummyEmbeddingGenerator(dimensions=384)
 ```
 
 ### Sentence Transformers
+
 ```python
 from ricedb.utils import SentenceTransformersEmbeddingGenerator
 
@@ -96,6 +100,7 @@ embed_gen = SentenceTransformersEmbeddingGenerator(
 ```
 
 ### OpenAI
+
 ```python
 from ricedb.utils import OpenAIEmbeddingGenerator
 
@@ -106,6 +111,7 @@ embed_gen = OpenAIEmbeddingGenerator(
 ```
 
 ### Hugging Face
+
 ```python
 from ricedb.utils import HuggingFaceEmbeddingGenerator
 
@@ -117,7 +123,8 @@ embed_gen = HuggingFaceEmbeddingGenerator(
 ## Advanced Usage
 
 ### Batch Operations
-```python
+
+```pythonricedb
 # Prepare documents
 documents = [
     {"id": 1, "vector": [0.1, 0.2, ...], "metadata": {"title": "Doc 1"}},
@@ -130,6 +137,7 @@ print(f"Inserted {result['count']} documents")
 ```
 
 ### Streaming Search (gRPC only)
+
 ```python
 if client.get_transport_info()["type"] == "grpc":
     for result in client.stream_search(query_vector, user_id=100):
@@ -137,6 +145,7 @@ if client.get_transport_info()["type"] == "grpc":
 ```
 
 ### User Access Control
+
 ```python
 # Insert as user 100
 client.insert_text(1, "Secret document", user_id=100)
@@ -155,12 +164,14 @@ This client requires a RiceDB server. Please follow the instructions in the [mai
 Generally, you will run something like:
 
 ### HTTP Server
+
 ```bash
 # From the RiceDB server repository
 cargo run --example http_server --features http-server
 ```
 
 ### gRPC Server
+
 ```bash
 # From the RiceDB server repository
 cargo run --bin ricedb-server-grpc --features grpc-server
@@ -200,6 +211,7 @@ This project uses `uv` for dependency management and `ruff`/`pyrefly` for code q
 - [uv](https://github.com/astral-sh/uv)
 
 ### Setup
+
 ```bash
 git clone https://github.com/your-org/ricedb-python
 cd ricedb-python
@@ -207,11 +219,13 @@ make setup
 ```
 
 ### Running Tests
+
 ```bash
 make test
 ```
 
 ### Code Quality
+
 ```bash
 # Format code
 make format
