@@ -19,7 +19,7 @@ test:
 lint:
 	@echo "🔍 Running linters..."
 	$(UV) run ruff check src/ricedb tests/
-	$(UV) run pyrefly check src/ricedb --ignore missing-attribute --ignore implicit-import --ignore bad-return --ignore-errors-in-generated-code=true
+	$(UV) run ty check src/ricedb
 
 format:
 	@echo "🎨 Formatting code..."
@@ -37,7 +37,7 @@ clean:
 	rm -rf htmlcov
 	rm -rf .mypy_cache
 	rm -rf .ruff_cache
-	rm -rf .pyrefly_cache
+	rm -rf .ty_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 

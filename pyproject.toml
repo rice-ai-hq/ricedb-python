@@ -32,7 +32,6 @@ dev = [
     "pytest-cov>=4.0",
     "pytest-asyncio>=0.21.0",
     "ruff>=0.1.0",
-    "pyrefly>=0.1.0",
     "pre-commit>=3.0.0",
 ]
 
