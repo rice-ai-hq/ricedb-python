@@ -3,7 +3,8 @@ Embedding generator utilities for RiceDB.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, Union
+from typing import List, Optional
+
 import numpy as np
 
 
@@ -99,7 +100,7 @@ class SentenceTransformersEmbeddingGenerator(EmbeddingGenerator):
         self,
         model_name: str = "all-MiniLM-L6-v2",
         batch_size: int = 32,
-        device: Optional[str] = None
+        device: Optional[str] = None,
     ):
         """Initialize the Sentence Transformers embedding generator.
 
@@ -119,9 +120,10 @@ class SentenceTransformersEmbeddingGenerator(EmbeddingGenerator):
         if self._model is None:
             try:
                 from sentence_transformers import SentenceTransformer
+
                 self._model = SentenceTransformer(self.model_name, device=self.device)
             except ImportError:
-                raise ImportError(
+                raise ImportError(  # noqa: B904
                     "sentence-transformers package is required. "
                     "Install it with: pip install ricedb[embeddings]"
                 )
@@ -147,11 +149,7 @@ class SentenceTransformersEmbeddingGenerator(EmbeddingGenerator):
         Returns:
             List of embedding vectors
         """
-        return self.model.encode(
-            texts,
-            batch_size=self.batch_size,
-            show_progress_bar=True
-        ).tolist()
+        return self.model.encode(texts, batch_size=self.batch_size, show_progress_bar=True).tolist()
 
 
 class OpenAIEmbeddingGenerator(EmbeddingGenerator):
@@ -161,7 +159,7 @@ class OpenAIEmbeddingGenerator(EmbeddingGenerator):
         self,
         model: str = "text-embedding-ada-002",
         api_key: Optional[str] = None,
-        batch_size: int = 100
+        batch_size: int = 100,
     ):
         """Initialize the OpenAI embedding generator.
 
@@ -181,11 +179,11 @@ class OpenAIEmbeddingGenerator(EmbeddingGenerator):
         if self._client is None:
             try:
                 import openai
+
                 self._client = openai.OpenAI(api_key=self.api_key)
             except ImportError:
-                raise ImportError(
-                    "openai package is required. "
-                    "Install it with: pip install ricedb[openai]"
+                raise ImportError(  # noqa: B904
+                    "openai package is required. Install it with: pip install ricedb[openai]"
                 )
         return self._client
 
@@ -198,10 +196,7 @@ class OpenAIEmbeddingGenerator(EmbeddingGenerator):
         Returns:
             Embedding vector
         """
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=text
-        )
+        response = self.client.embeddings.create(model=self.model, input=text)
         return response.data[0].embedding
 
     def encode_batch(self, texts: List[str]) -> List[List[float]]:
@@ -215,11 +210,8 @@ class OpenAIEmbeddingGenerator(EmbeddingGenerator):
         """
         embeddings = []
         for i in range(0, len(texts), self.batch_size):
-            batch = texts[i:i + self.batch_size]
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=batch
-            )
+            batch = texts[i : i + self.batch_size]
+            response = self.client.embeddings.create(model=self.model, input=batch)
             batch_embeddings = [item.embedding for item in response.data]
             embeddings.extend(batch_embeddings)
         return embeddings
@@ -232,7 +224,7 @@ class HuggingFaceEmbeddingGenerator(EmbeddingGenerator):
         self,
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         device: Optional[str] = None,
-        normalize: bool = True
+        normalize: bool = True,
     ):
         """Initialize the Hugging Face embedding generator.
 
@@ -253,9 +245,10 @@ class HuggingFaceEmbeddingGenerator(EmbeddingGenerator):
         if self._tokenizer is None:
             try:
                 from transformers import AutoTokenizer
+
                 self._tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             except ImportError:
-                raise ImportError(
+                raise ImportError(  # noqa: B904
                     "transformers package is required. "
                     "Install it with: pip install transformers torch"
                 )
@@ -267,11 +260,12 @@ class HuggingFaceEmbeddingGenerator(EmbeddingGenerator):
         if self._model is None:
             try:
                 from transformers import AutoModel
+
                 self._model = AutoModel.from_pretrained(self.model_name)
                 if self.device:
                     self._model = self._model.to(self.device)
             except ImportError:
-                raise ImportError(
+                raise ImportError(  # noqa: B904
                     "transformers package is required. "
                     "Install it with: pip install transformers torch"
                 )
@@ -300,12 +294,7 @@ class HuggingFaceEmbeddingGenerator(EmbeddingGenerator):
         import torch
 
         # Tokenize texts
-        encoded = self.tokenizer(
-            texts,
-            padding=True,
-            truncation=True,
-            return_tensors="pt"
-        )
+        encoded = self.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
         if self.device:
             encoded = {k: v.to(self.device) for k, v in encoded.items()}
 
@@ -313,10 +302,7 @@ class HuggingFaceEmbeddingGenerator(EmbeddingGenerator):
         with torch.no_grad():
             outputs = self.model(**encoded)
             # Mean pooling
-            embeddings = self._mean_pooling(
-                outputs.last_hidden_state,
-                encoded['attention_mask']
-            )
+            embeddings = self._mean_pooling(outputs.last_hidden_state, encoded["attention_mask"])
 
         # Normalize if requested
         if self.normalize:
@@ -327,5 +313,8 @@ class HuggingFaceEmbeddingGenerator(EmbeddingGenerator):
     def _mean_pooling(self, last_hidden_state, attention_mask):
         """Mean pooling of token embeddings."""
         import torch
+
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
-        return torch.sum(last_hidden_state * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+        return torch.sum(last_hidden_state * input_mask_expanded, 1) / torch.clamp(
+            input_mask_expanded.sum(1), min=1e-9
+        )

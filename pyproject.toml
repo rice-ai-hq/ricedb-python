@@ -58,3 +58,9 @@ exclude = ["src/ricedb/protobuf/ricedb_pb2.py"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "--cov=src/ricedb --cov-report=term-missing"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.9",
+    "ty>=0.0.3",
+]
