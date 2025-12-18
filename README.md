@@ -38,6 +38,9 @@ from ricedb import RiceDBClient
 # Ensure your RiceDB server is running on localhost
 client = RiceDBClient("localhost")
 
+# Note: By default, insert_text uses a dummy embedding generator (random vectors).
+# For semantic search, pass a real embedding generator (see "Embedding Generators").
+
 # Insert a document
 client.insert_text(
     node_id=1,
@@ -169,7 +172,8 @@ See the [examples](examples/) directory for more detailed examples:
 
 - [basic_usage.py](examples/basic_usage.py) - Basic CRUD operations
 - [with_sentence_transformers.py](examples/with_sentence_transformers.py) - Using real embeddings
-- [multi_agent_example.py](examples/multi_agent_example.py) - Multi-user ACL demo
+- [multi_agent_example.py](examples/multi_agent_example.py) - Multi-user data isolation demo
+- [multi_user_acl.py](examples/multi_user_acl.py) - Advanced ACL operations (grant/revoke)
 
 ## API Reference
 
