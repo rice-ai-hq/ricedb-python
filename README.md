@@ -1,8 +1,6 @@
 # RiceDB Python Client
 
-A pure Python client for connecting to and interacting with [RiceDB](https://github.com/your-org/ricedb), a high-performance vector-graph database.
-
-> **Note:** This package is **only** the client library. You must have a running instance of the RiceDB server to use this client.
+A Python client for connecting to [RiceDB](https://github.com/your-org/ricedb), a high-performance vector-graph database.
 
 ## Features
 
@@ -35,11 +33,7 @@ pip install ricedb[all]
 from ricedb import RiceDBClient
 
 # Connect to server (auto-detects transport)
-# Ensure your RiceDB server is running on localhost
 client = RiceDBClient("localhost")
-
-# Note: By default, insert_text uses a dummy embedding generator (random vectors).
-# For semantic search, pass a real embedding generator (see "Embedding Generators").
 
 # Insert a document
 client.insert_text(
@@ -64,13 +58,11 @@ for result in results:
 ## Transport Options
 
 ### Auto-Detection (Recommended)
-
 ```python
 client = RiceDBClient("localhost")  # Tries gRPC first, falls back to HTTP
 ```
 
 ### Explicit Transport Selection
-
 ```python
 # HTTP only
 client = RiceDBClient("localhost", transport="http", port=3000)
@@ -82,7 +74,6 @@ client = RiceDBClient("localhost", transport="grpc", port=50051)
 ## Embedding Generators
 
 ### Dummy Embeddings (for testing)
-
 ```python
 from ricedb.utils import DummyEmbeddingGenerator
 
@@ -90,7 +81,6 @@ embed_gen = DummyEmbeddingGenerator(dimensions=384)
 ```
 
 ### Sentence Transformers
-
 ```python
 from ricedb.utils import SentenceTransformersEmbeddingGenerator
 
@@ -100,7 +90,6 @@ embed_gen = SentenceTransformersEmbeddingGenerator(
 ```
 
 ### OpenAI
-
 ```python
 from ricedb.utils import OpenAIEmbeddingGenerator
 
@@ -111,7 +100,6 @@ embed_gen = OpenAIEmbeddingGenerator(
 ```
 
 ### Hugging Face
-
 ```python
 from ricedb.utils import HuggingFaceEmbeddingGenerator
 
@@ -123,8 +111,7 @@ embed_gen = HuggingFaceEmbeddingGenerator(
 ## Advanced Usage
 
 ### Batch Operations
-
-```pythonricedb
+```python
 # Prepare documents
 documents = [
     {"id": 1, "vector": [0.1, 0.2, ...], "metadata": {"title": "Doc 1"}},
@@ -137,15 +124,38 @@ print(f"Inserted {result['count']} documents")
 ```
 
 ### Streaming Search (gRPC only)
-
 ```python
 if client.get_transport_info()["type"] == "grpc":
     for result in client.stream_search(query_vector, user_id=100):
         print(f"Found: {result['metadata']['title']}")
 ```
 
-### User Access Control
+### Agent Memory (Scratchpad)
+The Agent Memory feature provides a lightweight, time-ordered shared memory for agents. It avoids polluting the main vector index with intermediate thoughts or chat history and is optimized for high-frequency updates.
 
+```python
+# 1. Add to memory (No embeddings computed, instant)
+client.memory.add(
+    session_id="task-123",
+    agent="ReviewerAgent",
+    content="I found a bug in auth.py",
+    metadata={"severity": "high"}
+)
+
+# 2. Retrieve history (Time-ordered)
+history = client.memory.get(session_id="task-123", limit=10)
+for entry in history:
+    print(f"[{entry['agent_id']}] {entry['content']}")
+
+# 3. Poll for new messages (using timestamp)
+last_check = int(time.time()) - 60
+new_msgs = client.memory.get(session_id="task-123", after=last_check)
+
+# 4. Clear session
+client.memory.clear("task-123")
+```
+
+### User Access Control
 ```python
 # Insert as user 100
 client.insert_text(1, "Secret document", user_id=100)
@@ -159,21 +169,15 @@ results = client.search_text("secret", user_id=100)  # Returns documents
 
 ## Server Setup
 
-This client requires a RiceDB server. Please follow the instructions in the [main RiceDB repository](https://github.com/your-org/ricedb) to install and start the server.
-
-Generally, you will run something like:
-
 ### HTTP Server
-
 ```bash
-# From the RiceDB server repository
+cd /path/to/ricedb
 cargo run --example http_server --features http-server
 ```
 
 ### gRPC Server
-
 ```bash
-# From the RiceDB server repository
+cd /path/to/ricedb
 cargo run --bin ricedb-server-grpc --features grpc-server
 ```
 
@@ -183,8 +187,8 @@ See the [examples](examples/) directory for more detailed examples:
 
 - [basic_usage.py](examples/basic_usage.py) - Basic CRUD operations
 - [with_sentence_transformers.py](examples/with_sentence_transformers.py) - Using real embeddings
-- [multi_agent_example.py](examples/multi_agent_example.py) - Multi-user data isolation demo
-- [multi_user_acl.py](examples/multi_user_acl.py) - Advanced ACL operations (grant/revoke)
+- [multi_agent_example.py](examples/multi_agent_example.py) - Multi-user ACL demo
+- [agent_memory_example.py](examples/agent_memory_example.py) - Native Agent Memory (Scratchpad) usage
 
 ## API Reference
 
@@ -204,42 +208,27 @@ See the [examples](examples/) directory for more detailed examples:
 
 ## Development
 
-This project uses `uv` for dependency management and `ruff`/`pyrefly` for code quality.
-
-### Prerequisites
-
-- [uv](https://github.com/astral-sh/uv)
-
 ### Setup
-
 ```bash
-git clone https://github.com/your-org/ricedb-python
-cd ricedb-python
-make setup
+git clone https://github.com/your-org/ricedb
+cd ricedb/ricedb-python
+pip install -e ".[dev]"
 ```
 
 ### Running Tests
-
 ```bash
-make test
+pytest
 ```
 
-### Code Quality
-
+### Code Formatting
 ```bash
-# Format code
-make format
-
-# Lint code
-make lint
-
-# Run all checks (format, lint, test)
-make check
+black src tests
+flake8 src tests
 ```
 
 ## License
 
-This project is proprietary software. All rights reserved. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
@@ -247,7 +236,7 @@ This project is proprietary software. All rights reserved. See the [LICENSE](LIC
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Run `make check` to ensure quality
+5. Run the test suite
 6. Submit a pull request
 
 ## Support

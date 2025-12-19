@@ -10,6 +10,36 @@ from .grpc_client import GrpcRiceDBClient
 from .http_client import HTTPRiceDBClient
 
 
+class Memory:
+    """Helper class for Agent Memory operations."""
+
+    def __init__(self, client: BaseRiceDBClient):
+        self.client = client
+
+    def add(
+        self,
+        session_id: str,
+        agent: str,
+        content: str,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Add to agent memory."""
+        return self.client.add_memory(session_id, agent, content, metadata)
+
+    def get(
+        self,
+        session_id: str,
+        limit: int = 50,
+        after: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get agent memory."""
+        return self.client.get_memory(session_id, limit, after)
+
+    def clear(self, session_id: str) -> Dict[str, Any]:
+        """Clear agent memory."""
+        return self.client.clear_memory(session_id)
+
+
 class RiceDBClient(BaseRiceDBClient):
     """Unified client that automatically selects the best transport method.
 
@@ -44,6 +74,7 @@ class RiceDBClient(BaseRiceDBClient):
         self.grpc_port = port if port is not None else grpc_port
         self.kwargs = kwargs
         self._client: Optional[BaseRiceDBClient] = None
+        self.memory = Memory(self)
 
         # Validate transport type
         if self.transport_type not in ["auto", "http", "grpc"]:
@@ -399,3 +430,29 @@ class RiceDBClient(BaseRiceDBClient):
             "features": [],
             "acl_support": False,
         }
+
+    def add_memory(
+        self,
+        session_id: str,
+        agent_id: str,
+        content: str,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Add to agent memory."""
+        client = self._get_client()
+        return client.add_memory(session_id, agent_id, content, metadata)
+
+    def get_memory(
+        self,
+        session_id: str,
+        limit: int = 50,
+        after: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get agent memory."""
+        client = self._get_client()
+        return client.get_memory(session_id, limit, after)
+
+    def clear_memory(self, session_id: str) -> Dict[str, Any]:
+        """Clear agent memory."""
+        client = self._get_client()
+        return client.clear_memory(session_id)

@@ -508,3 +508,84 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         # raise RiceDBError("check_permission is not currently supported via gRPC transport")
         print(f"Warning: check_permission not supported in gRPC, assuming False for {node_id}")
         return False
+
+    def add_memory(
+        self,
+        session_id: str,
+        agent_id: str,
+        content: str,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Add to agent memory."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+
+        try:
+            request = ricedb_pb2.AddMemoryRequest(  # ty:ignore[unresolved-attribute]
+                session_id=session_id,
+                agent_id=agent_id,
+                content=content,
+                metadata=metadata or {},
+            )
+            response = self.stub.AddMemory(request, metadata=self._metadata())
+
+            entry = {
+                "id": response.entry.id,
+                "session_id": response.entry.session_id,
+                "agent_id": response.entry.agent_id,
+                "content": response.entry.content,
+                "timestamp": response.entry.timestamp,
+                "metadata": dict(response.entry.metadata),
+            }
+
+            return {
+                "success": response.success,
+                "message": response.message,
+                "entry": entry,
+            }
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Add memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def get_memory(
+        self,
+        session_id: str,
+        limit: int = 50,
+        after: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get agent memory."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+
+        try:
+            request = ricedb_pb2.GetMemoryRequest(  # ty:ignore[unresolved-attribute]
+                session_id=session_id,
+                limit=limit,
+                after_timestamp=after or 0,
+            )
+            response = self.stub.GetMemory(request, metadata=self._metadata())
+
+            results = []
+            for entry in response.entries:
+                results.append({
+                    "id": entry.id,
+                    "session_id": entry.session_id,
+                    "agent_id": entry.agent_id,
+                    "content": entry.content,
+                    "timestamp": entry.timestamp,
+                    "metadata": dict(entry.metadata),
+                })
+            return results
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Get memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def clear_memory(self, session_id: str) -> Dict[str, Any]:
+        """Clear agent memory."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+
+        try:
+            request = ricedb_pb2.ClearMemoryRequest(session_id=session_id)  # ty:ignore[unresolved-attribute]
+            response = self.stub.ClearMemory(request, metadata=self._metadata())
+            return {"success": response.success, "message": response.message}
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Clear memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904

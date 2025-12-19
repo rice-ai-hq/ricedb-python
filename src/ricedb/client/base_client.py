@@ -283,6 +283,58 @@ class BaseRiceDBClient(ABC):
         """
         pass
 
+    @abstractmethod
+    def add_memory(
+        self,
+        session_id: str,
+        agent_id: str,
+        content: str,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Add to agent memory.
+
+        Args:
+            session_id: Session ID
+            agent_id: Agent ID
+            content: Memory content
+            metadata: Additional metadata
+
+        Returns:
+            Response with entry
+        """
+        pass
+
+    @abstractmethod
+    def get_memory(
+        self,
+        session_id: str,
+        limit: int = 50,
+        after: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get agent memory.
+
+        Args:
+            session_id: Session ID
+            limit: Max entries to return
+            after: Timestamp to start after
+
+        Returns:
+            List of memory entries
+        """
+        pass
+
+    @abstractmethod
+    def clear_memory(self, session_id: str) -> Dict[str, Any]:
+        """Clear agent memory.
+
+        Args:
+            session_id: Session ID
+
+        Returns:
+            Response
+        """
+        pass
+
     def batch_insert(
         self, documents: List[Dict[str, Any]], user_id: Optional[int] = None
     ) -> Dict[str, Any]:

@@ -481,3 +481,60 @@ class HTTPRiceDBClient(BaseRiceDBClient):
 
         except (InsertError, RiceDBError) as e:
             raise InsertError(f"Failed to insert with ACL: {e}")  # noqa: B904
+
+    def add_memory(
+        self,
+        session_id: str,
+        agent_id: str,
+        content: str,
+        metadata: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Add to agent memory."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/memory/{session_id}",
+                json={
+                    "agent_id": agent_id,
+                    "content": content,
+                    "metadata": metadata or {},
+                },
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to add memory: {e}")  # noqa: B904
+
+    def get_memory(
+        self,
+        session_id: str,
+        limit: int = 50,
+        after: Optional[int] = None,
+    ) -> List[Dict[str, Any]]:
+        """Get agent memory."""
+        try:
+            params = {"limit": limit}
+            if after is not None:
+                params["after_timestamp"] = after
+
+            response = self.session.get(
+                f"{self.base_url}/memory/{session_id}",
+                params=params,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json().get("entries", [])
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to get memory: {e}")  # noqa: B904
+
+    def clear_memory(self, session_id: str) -> Dict[str, Any]:
+        """Clear agent memory."""
+        try:
+            response = self.session.delete(
+                f"{self.base_url}/memory/{session_id}",
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to clear memory: {e}")  # noqa: B904
