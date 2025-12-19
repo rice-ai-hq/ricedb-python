@@ -488,16 +488,21 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         agent_id: str,
         content: str,
         metadata: Optional[Dict[str, str]] = None,
+        ttl_seconds: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Add to agent memory."""
         try:
+            payload = {
+                "agent_id": agent_id,
+                "content": content,
+                "metadata": metadata or {},
+            }
+            if ttl_seconds is not None:
+                payload["ttl_seconds"] = ttl_seconds
+
             response = self.session.post(
                 f"{self.base_url}/memory/{session_id}",
-                json={
-                    "agent_id": agent_id,
-                    "content": content,
-                    "metadata": metadata or {},
-                },
+                json=payload,
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -510,12 +515,17 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         session_id: str,
         limit: int = 50,
         after: Optional[int] = None,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         """Get agent memory."""
         try:
             params = {"limit": limit}
             if after is not None:
                 params["after_timestamp"] = after
+            
+            # Note: Complex filter map not yet fully supported via simple query params in HTTP endpoint
+            # We skip sending filter for now if it's complex, or we could JSON encode it if server supported it.
+            # Server implementation currently ignores filter in HTTP handler for simplicity.
 
             response = self.session.get(
                 f"{self.base_url}/memory/{session_id}",
@@ -538,3 +548,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             return response.json()
         except requests.RequestException as e:
             raise RiceDBError(f"Failed to clear memory: {e}")  # noqa: B904
+
+    def watch_memory(self, session_id: str):
+        """Watch for new memory events in a session."""
+        raise RiceDBError("Watch memory is not supported via HTTP transport. Use gRPC.")

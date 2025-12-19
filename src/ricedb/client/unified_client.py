@@ -22,22 +22,43 @@ class Memory:
         agent: str,
         content: str,
         metadata: Optional[Dict[str, str]] = None,
+        ttl: Optional[int] = None,
     ) -> Dict[str, Any]:
-        """Add to agent memory."""
-        return self.client.add_memory(session_id, agent, content, metadata)
+        """Add to agent memory.
+        
+        Args:
+            session_id: Session ID
+            agent: Agent ID
+            content: Memory content
+            metadata: Additional metadata
+            ttl: Time-to-live in seconds
+        """
+        return self.client.add_memory(session_id, agent, content, metadata, ttl)
 
     def get(
         self,
         session_id: str,
         limit: int = 50,
         after: Optional[int] = None,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
-        """Get agent memory."""
-        return self.client.get_memory(session_id, limit, after)
+        """Get agent memory.
+        
+        Args:
+            session_id: Session ID
+            limit: Max entries to return
+            after: Timestamp to start after
+            filter: Metadata filter
+        """
+        return self.client.get_memory(session_id, limit, after, filter)
 
     def clear(self, session_id: str) -> Dict[str, Any]:
         """Clear agent memory."""
         return self.client.clear_memory(session_id)
+
+    def watch(self, session_id: str):
+        """Watch for new memory events in a session (gRPC only)."""
+        return self.client.watch_memory(session_id)
 
 
 class RiceDBClient(BaseRiceDBClient):
@@ -437,22 +458,43 @@ class RiceDBClient(BaseRiceDBClient):
         agent_id: str,
         content: str,
         metadata: Optional[Dict[str, str]] = None,
+        ttl_seconds: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Add to agent memory."""
         client = self._get_client()
-        return client.add_memory(session_id, agent_id, content, metadata)
+        return client.add_memory(session_id, agent_id, content, metadata, ttl_seconds)
 
     def get_memory(
         self,
         session_id: str,
         limit: int = 50,
         after: Optional[int] = None,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         """Get agent memory."""
         client = self._get_client()
-        return client.get_memory(session_id, limit, after)
+        return client.get_memory(session_id, limit, after, filter)
 
     def clear_memory(self, session_id: str) -> Dict[str, Any]:
         """Clear agent memory."""
         client = self._get_client()
         return client.clear_memory(session_id)
+
+    def watch_memory(self, session_id: str):
+        """Watch for new memory events in a session."""
+        client = self._get_client()
+        return client.watch_memory(session_id)
+
+    def link(self, source_id: int, relation: str, target_id: int, weight: float = 1.0) -> bool:
+        """Create a semantic link between two nodes."""
+        return self.add_edge(source_id, target_id, relation, weight)
+
+    def add_edge(self, from_node: int, to_node: int, relation: str, weight: float = 1.0) -> bool:
+        """Add an edge between two nodes."""
+        client = self._get_client()
+        return client.add_edge(from_node, to_node, relation, weight)
+
+    def get_neighbors(self, node_id: int, relation: Optional[str] = None) -> List[int]:
+        """Get neighbors of a node."""
+        client = self._get_client()
+        return client.get_neighbors(node_id, relation)

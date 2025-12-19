@@ -290,6 +290,7 @@ class BaseRiceDBClient(ABC):
         agent_id: str,
         content: str,
         metadata: Optional[Dict[str, str]] = None,
+        ttl_seconds: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Add to agent memory.
 
@@ -298,6 +299,7 @@ class BaseRiceDBClient(ABC):
             agent_id: Agent ID
             content: Memory content
             metadata: Additional metadata
+            ttl_seconds: Time-to-live in seconds
 
         Returns:
             Response with entry
@@ -310,6 +312,7 @@ class BaseRiceDBClient(ABC):
         session_id: str,
         limit: int = 50,
         after: Optional[int] = None,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         """Get agent memory.
 
@@ -317,6 +320,7 @@ class BaseRiceDBClient(ABC):
             session_id: Session ID
             limit: Max entries to return
             after: Timestamp to start after
+            filter: Metadata filter (key-value pairs)
 
         Returns:
             List of memory entries
@@ -332,6 +336,49 @@ class BaseRiceDBClient(ABC):
 
         Returns:
             Response
+        """
+        pass
+
+    @abstractmethod
+    def watch_memory(self, session_id: str):
+        """Watch for new memory events in a session.
+
+        Args:
+            session_id: Session ID to watch
+
+        Yields:
+            Memory events
+        """
+        pass
+
+    def link(self, source_id: int, relation: str, target_id: int, weight: float = 1.0) -> bool:
+        """Create a semantic link between two nodes.
+
+        Alias for add_edge.
+
+        Args:
+            source_id: Source Node ID
+            relation: Relationship type (e.g., "IMPORTS", "DEPENDS_ON")
+            target_id: Target Node ID
+            weight: Edge weight
+
+        Returns:
+            True if successful
+        """
+        return self.add_edge(source_id, target_id, relation, weight)
+
+    @abstractmethod
+    def add_edge(self, from_node: int, to_node: int, relation: str, weight: float = 1.0) -> bool:
+        """Add an edge between two nodes.
+
+        Args:
+            from_node: Source Node ID
+            to_node: Target Node ID
+            relation: Relationship label
+            weight: Edge weight
+
+        Returns:
+            True if successful
         """
         pass
 

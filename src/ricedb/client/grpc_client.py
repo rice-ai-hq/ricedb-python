@@ -390,9 +390,14 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             raise ConnectionError("Not connected to server")
 
         try:
-            request = ricedb_pb2.AddEdgeRequest(  # ty:ignore[unresolved-attribute]
-                from_=from_node, to=to_node, relation=relation, weight=weight
-            )
+            # "from" is a reserved keyword, so we use kwargs
+            kwargs = {
+                "from": from_node,
+                "to": to_node,
+                "relation": relation,
+                "weight": weight
+            }
+            request = ricedb_pb2.AddEdgeRequest(**kwargs)  # ty:ignore[unresolved-attribute]
             response = self.stub.AddEdge(request, metadata=self._metadata())
             return response.success
         except grpc.RpcError as e:
@@ -515,6 +520,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         agent_id: str,
         content: str,
         metadata: Optional[Dict[str, str]] = None,
+        ttl_seconds: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Add to agent memory."""
         if not self.stub:
@@ -526,6 +532,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 agent_id=agent_id,
                 content=content,
                 metadata=metadata or {},
+                ttl_seconds=ttl_seconds,
             )
             response = self.stub.AddMemory(request, metadata=self._metadata())
 
@@ -536,6 +543,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 "content": response.entry.content,
                 "timestamp": response.entry.timestamp,
                 "metadata": dict(response.entry.metadata),
+                "expires_at": response.entry.expires_at if response.entry.HasField("expires_at") else None,
             }
 
             return {
@@ -551,6 +559,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         session_id: str,
         limit: int = 50,
         after: Optional[int] = None,
+        filter: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         """Get agent memory."""
         if not self.stub:
@@ -561,19 +570,23 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 session_id=session_id,
                 limit=limit,
                 after_timestamp=after or 0,
+                filter=filter or {},
             )
             response = self.stub.GetMemory(request, metadata=self._metadata())
 
             results = []
             for entry in response.entries:
-                results.append({
+                item = {
                     "id": entry.id,
                     "session_id": entry.session_id,
                     "agent_id": entry.agent_id,
                     "content": entry.content,
                     "timestamp": entry.timestamp,
                     "metadata": dict(entry.metadata),
-                })
+                }
+                if entry.HasField("expires_at"):
+                    item["expires_at"] = entry.expires_at
+                results.append(item)
             return results
         except grpc.RpcError as e:
             raise RiceDBError(f"Get memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
@@ -589,3 +602,27 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             return {"success": response.success, "message": response.message}
         except grpc.RpcError as e:
             raise RiceDBError(f"Clear memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def watch_memory(self, session_id: str):
+        """Watch for new memory events in a session."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+
+        try:
+            request = ricedb_pb2.WatchMemoryRequest(session_id=session_id)  # ty:ignore[unresolved-attribute]
+            
+            for event in self.stub.WatchMemory(request, metadata=self._metadata()):
+                entry = event.entry
+                yield {
+                    "type": event.type,
+                    "entry": {
+                        "id": entry.id,
+                        "session_id": entry.session_id,
+                        "agent_id": entry.agent_id,
+                        "content": entry.content,
+                        "timestamp": entry.timestamp,
+                        "metadata": dict(entry.metadata),
+                    }
+                }
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Watch memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904

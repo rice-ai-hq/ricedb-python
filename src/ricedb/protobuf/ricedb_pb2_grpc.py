@@ -135,6 +135,11 @@ class RiceDBStub(object):
                 request_serializer=ricedb__pb2.ClearMemoryRequest.SerializeToString,
                 response_deserializer=ricedb__pb2.ClearMemoryResponse.FromString,
                 _registered_method=True)
+        self.WatchMemory = channel.unary_stream(
+                '/ricedb.RiceDB/WatchMemory',
+                request_serializer=ricedb__pb2.WatchMemoryRequest.SerializeToString,
+                response_deserializer=ricedb__pb2.MemoryEvent.FromString,
+                _registered_method=True)
 
 
 class RiceDBServicer(object):
@@ -276,6 +281,12 @@ class RiceDBServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def WatchMemory(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_RiceDBServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -378,6 +389,11 @@ def add_RiceDBServicer_to_server(servicer, server):
                     servicer.ClearMemory,
                     request_deserializer=ricedb__pb2.ClearMemoryRequest.FromString,
                     response_serializer=ricedb__pb2.ClearMemoryResponse.SerializeToString,
+            ),
+            'WatchMemory': grpc.unary_stream_rpc_method_handler(
+                    servicer.WatchMemory,
+                    request_deserializer=ricedb__pb2.WatchMemoryRequest.FromString,
+                    response_serializer=ricedb__pb2.MemoryEvent.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -921,6 +937,33 @@ class RiceDB(object):
             '/ricedb.RiceDB/ClearMemory',
             ricedb__pb2.ClearMemoryRequest.SerializeToString,
             ricedb__pb2.ClearMemoryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def WatchMemory(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/ricedb.RiceDB/WatchMemory',
+            ricedb__pb2.WatchMemoryRequest.SerializeToString,
+            ricedb__pb2.MemoryEvent.FromString,
             options,
             channel_credentials,
             insecure,

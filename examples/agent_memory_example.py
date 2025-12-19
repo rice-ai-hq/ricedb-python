@@ -42,6 +42,21 @@ def main():
 
     print_success(f"Connected via {client.get_transport_info()['type'].upper()}")
 
+    # Authenticate
+    try:
+        # Try to register first (ignore if exists)
+        try:
+            client.register("admin", "password123")
+        except:
+            pass
+        
+        # Login
+        client.login("admin", "password123")
+        print_success("Authenticated as 'admin'")
+    except Exception as e:
+        print(f"❌ Authentication failed: {e}")
+        return
+
     # Scenario: Code Review Session
     session_id = "code-review-101"
     
@@ -73,49 +88,66 @@ def main():
     print_success("ScannerAgent logged findings.")
 
     # Agent 2: Reviewer (Reacts to Scanner)
-    print_info("ReviewerAgent is checking memory for new findings...")
+    print_info("ReviewerAgent is filtering memory for 'high' priority findings...")
     
-    # Retrieve last 5 entries
-    history = client.memory.get(session_id=session_id, limit=5)
+    # Retrieve only high priority entries using server-side filtering
+    high_priority_findings = client.memory.get(
+        session_id=session_id, 
+        filter={"priority": "high"}
+    )
     
-    print("\n[Current Memory State]")
-    for entry in history:
-        print(f"  - [{entry['agent_id']}] {entry['content']} (meta: {entry.get('metadata')})")
+    print(f"\n[High Priority Findings: {len(high_priority_findings)}]")
+    for entry in high_priority_findings:
+        print(f"  - [{entry['agent_id']}] {entry['content']}")
 
     # Reviewer takes action based on memory
-    last_entry = history[-1]
-    if last_entry['agent_id'] == "ScannerAgent" and "secret" in last_entry['content']:
-        print("\nReviewerAgent noticed the secret issue.")
+    if high_priority_findings:
+        last_entry = high_priority_findings[-1]
+        print("\nReviewerAgent noticed the issue.")
         client.memory.add(
             session_id=session_id,
             agent="ReviewerAgent",
             content="I verified the finding. It is indeed a hardcoded string.",
-            metadata={"verdict": "confirmed", "refers_to": last_entry['id']}
+            metadata={"verdict": "confirmed", "refers_to": last_entry['id']},
+            ttl=3600 # Keep this verification for 1 hour only
         )
-        print_success("ReviewerAgent added confirmation.")
+        print_success("ReviewerAgent added confirmation with 1h TTL.")
 
-    # 3. Filtering and Polling
-    print_section("3. Advanced Retrieval")
+    # 3. Real-time Watch (gRPC only)
+    print_section("3. Real-time Watch (Pub/Sub)")
     
-    # Simulate a time gap
-    timestamp_mark = int(time.time())
-    time.sleep(1)
+    transport = client.get_transport_info()['type']
+    if transport == "grpc":
+        print_info("Watching for next message (blocking)...")
+        
+        # In a real app, this would be in a separate thread/process
+        # Here we simulate a producer in the background? 
+        # Since we are single-threaded here, we can't easily demo blocking watch 
+        # AND produce at the same time without threads.
+        # Let's just describe it or skip blocking call in this simple script.
+        print("   (Skipping blocking watch in single-threaded demo. See docs for usage.)")
+        # To demo: client.memory.watch(session_id) yields events
+    else:
+        print("   (Watch API requires gRPC transport)")
 
-    # Agent 3: Fixer (Comes in later)
-    client.memory.add(
-        session_id=session_id,
-        agent="FixerAgent",
-        content="Applied patch to remove hardcoded secret.",
-        metadata={"action": "patch", "commit": "a1b2c3d"}
-    )
-    print_success("FixerAgent applied patch.")
-
-    # Retrieve only new messages (since timestamp_mark)
-    print_info("Retrieving only new messages since the Reviewer checked...")
-    new_entries = client.memory.get(session_id=session_id, after=timestamp_mark)
-    
-    for entry in new_entries:
-        print(f"  - [NEW] [{entry['agent_id']}] {entry['content']}")
+    # 4. Graph Linking
+    print_section("4. Graph Knowledge")
+    try:
+        # Create nodes representing files/concepts
+        client.insert_text(101, "auth.ts authentication logic", {"type": "file"}, user_id=1)
+        client.insert_text(102, "login.ts user login page", {"type": "file"}, user_id=1)
+        
+        # Link them
+        print_info("Linking auth.ts -> IMPORTS -> login.ts")
+        client.link(102, "IMPORTS", 101)
+        print_success("Link created.")
+        
+        # Verify neighbors
+        neighbors = client.get_neighbors(102, relation="IMPORTS")
+        print(f"   Neighbors of login.ts (IMPORTS): {neighbors}")
+        
+    except Exception as e:
+        print(f"   (Graph op failed: {e})")
 
     print_section("Summary")
     print("The Agent Memory feature allows fast, lightweight coordination between agents")
