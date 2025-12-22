@@ -7,11 +7,11 @@ name = "ricedb"
 version = "0.1.0"
 description = "Python client for RiceDB database"
 readme = "README.md"
-license = { text = "Proprietary" }
+license = { text = "GPLv3" }
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: Other/Proprietary License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -59,7 +59,4 @@ python_files = ["test_*.py"]
 addopts = "--cov=src/ricedb --cov-report=term-missing"
 
 [dependency-groups]
-dev = [
-    "ruff>=0.14.9",
-    "ty>=0.0.3",
-]
+dev = ["ruff>=0.14.9", "ty>=0.0.3"]
