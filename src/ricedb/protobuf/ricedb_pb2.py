@@ -4,133 +4,130 @@
 # source: ricedb.proto
 # Protobuf Python Version: 6.31.1
 """Generated protocol buffer code."""
+
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import runtime_version as _runtime_version
 from google.protobuf import symbol_database as _symbol_database
 from google.protobuf.internal import builder as _builder
+
 _runtime_version.ValidateProtobufRuntimeVersion(
-    _runtime_version.Domain.PUBLIC,
-    6,
-    31,
-    1,
-    '',
-    'ricedb.proto'
+    _runtime_version.Domain.PUBLIC, 6, 31, 1, "", "ricedb.proto"
 )
 # @@protoc_insertion_point(imports)
 
 _sym_db = _symbol_database.Default()
 
 
-
-
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0cricedb.proto\x12\x06ricedb\"2\n\x0cLoginRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"/\n\rLoginResponse\x12\r\n\x05token\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\x04\"5\n\x0fRegisterRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t\"4\n\x10RegisterResponse\x12\x0f\n\x07user_id\x18\x01 \x01(\x04\x12\x0f\n\x07message\x18\x02 \x01(\t\"\x0f\n\rHealthRequest\"1\n\x0eHealthResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\"4\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x0e\n\x06vector\x18\x02 \x03(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\x0c\"N\n\rInsertRequest\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x0e\n\x06vector\x18\x02 \x03(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\x0c\x12\x0f\n\x07user_id\x18\x04 \x01(\x04\"C\n\x0eInsertResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07node_id\x18\x02 \x01(\x04\x12\x0f\n\x07message\x18\x03 \x01(\t\"6\n\x13\x42\x61tchInsertResponse\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12\x10\n\x08node_ids\x18\x02 \x03(\x04\"!\n\x0eGetNodeRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\"-\n\x0fGetNodeResponse\x12\x1a\n\x04node\x18\x01 \x01(\x0b\x32\x0c.ricedb.Node\"$\n\x11\x44\x65leteNodeRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\"6\n\x12\x44\x65leteNodeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\";\n\rSearchRequest\x12\x0e\n\x06vector\x18\x01 \x03(\x02\x12\x0f\n\x07user_id\x18\x02 \x01(\x04\x12\t\n\x01k\x18\x03 \x01(\r\"7\n\x0eSearchResponse\x12%\n\x07results\x18\x01 \x03(\x0b\x32\x14.ricedb.SearchResult\"@\n\x0cSearchResult\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x12\n\nsimilarity\x18\x02 \x01(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\x0c\":\n\x0bPermissions\x12\x0c\n\x04read\x18\x01 \x01(\x08\x12\r\n\x05write\x18\x02 \x01(\x08\x12\x0e\n\x06\x64\x65lete\x18\x03 \x01(\x08\"k\n\x16GrantPermissionRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x16\n\x0etarget_user_id\x18\x02 \x01(\x04\x12(\n\x0bpermissions\x18\x03 \x01(\x0b\x32\x13.ricedb.Permissions\";\n\x17GrantPermissionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"B\n\x17RevokePermissionRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x16\n\x0etarget_user_id\x18\x02 \x01(\x04\"<\n\x18RevokePermissionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"L\n\x0e\x41\x64\x64\x45\x64geRequest\x12\x0c\n\x04\x66rom\x18\x01 \x01(\x04\x12\n\n\x02to\x18\x02 \x01(\x04\x12\x10\n\x08relation\x18\x03 \x01(\t\x12\x0e\n\x06weight\x18\x04 \x01(\x02\"3\n\x0f\x41\x64\x64\x45\x64geResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"J\n\x13GetNeighborsRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x15\n\x08relation\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_relation\":\n\x14GetNeighborsResponse\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x11\n\tneighbors\x18\x02 \x03(\x04\"8\n\x14TraverseGraphRequest\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x11\n\tmax_depth\x18\x02 \x01(\r\"7\n\x15TraverseGraphResponse\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x0f\n\x07visited\x18\x02 \x03(\x04\"\x7f\n\x10SubscribeRequest\x12\x13\n\x0b\x66ilter_type\x18\x01 \x01(\t\x12\x14\n\x07node_id\x18\x02 \x01(\x04H\x00\x88\x01\x01\x12\x0e\n\x06vector\x18\x03 \x03(\x02\x12\x16\n\tthreshold\x18\x04 \x01(\x02H\x01\x88\x01\x01\x42\n\n\x08_node_idB\x0c\n\n_threshold\"H\n\x0bPubSubEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x1a\n\x04node\x18\x02 \x01(\x0b\x32\x0c.ricedb.Node\x12\x0f\n\x07node_id\x18\x03 \x01(\x04\"\x1b\n\tBitVector\x12\x0e\n\x06\x63hunks\x18\x01 \x03(\x04\"j\n\x12WriteMemoryRequest\x12\"\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0b\x32\x11.ricedb.BitVector\x12\x1f\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x11.ricedb.BitVector\x12\x0f\n\x07user_id\x18\x03 \x01(\x04\"7\n\x13WriteMemoryResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"H\n\x11ReadMemoryRequest\x12\"\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0b\x32\x11.ricedb.BitVector\x12\x0f\n\x07user_id\x18\x02 \x01(\x04\"5\n\x12ReadMemoryResponse\x12\x1f\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x11.ricedb.BitVector\"\xf1\x01\n\x0bMemoryEntry\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x03 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\x12\x33\n\x08metadata\x18\x06 \x03(\x0b\x32!.ricedb.MemoryEntry.MetadataEntry\x12\x17\n\nexpires_at\x18\x07 \x01(\x03H\x00\x88\x01\x01\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x42\r\n\x0b_expires_at\"\xde\x01\n\x10\x41\x64\x64MemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\x38\n\x08metadata\x18\x04 \x03(\x0b\x32&.ricedb.AddMemoryRequest.MetadataEntry\x12\x18\n\x0bttl_seconds\x18\x05 \x01(\x03H\x00\x88\x01\x01\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x42\x0e\n\x0c_ttl_seconds\"Y\n\x11\x41\x64\x64MemoryResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\"\n\x05\x65ntry\x18\x03 \x01(\x0b\x32\x13.ricedb.MemoryEntry\"\xb3\x01\n\x10GetMemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\r\x12\x17\n\x0f\x61\x66ter_timestamp\x18\x03 \x01(\x03\x12\x34\n\x06\x66ilter\x18\x04 \x03(\x0b\x32$.ricedb.GetMemoryRequest.FilterEntry\x1a-\n\x0b\x46ilterEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"9\n\x11GetMemoryResponse\x12$\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x13.ricedb.MemoryEntry\"(\n\x12\x43learMemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\"7\n\x13\x43learMemoryResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"(\n\x12WatchMemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\"?\n\x0bMemoryEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\"\n\x05\x65ntry\x18\x02 \x01(\x0b\x32\x13.ricedb.MemoryEntry2\x86\x0b\n\x06RiceDB\x12\x34\n\x05Login\x12\x14.ricedb.LoginRequest\x1a\x15.ricedb.LoginResponse\x12=\n\x08Register\x12\x17.ricedb.RegisterRequest\x1a\x18.ricedb.RegisterResponse\x12\x37\n\x06Health\x12\x15.ricedb.HealthRequest\x1a\x16.ricedb.HealthResponse\x12\x37\n\x06Insert\x12\x15.ricedb.InsertRequest\x1a\x16.ricedb.InsertResponse\x12:\n\x07GetNode\x12\x16.ricedb.GetNodeRequest\x1a\x17.ricedb.GetNodeResponse\x12\x43\n\nDeleteNode\x12\x19.ricedb.DeleteNodeRequest\x1a\x1a.ricedb.DeleteNodeResponse\x12\x37\n\x06Search\x12\x15.ricedb.SearchRequest\x1a\x16.ricedb.SearchResponse\x12\x43\n\x0b\x42\x61tchInsert\x12\x15.ricedb.InsertRequest\x1a\x1b.ricedb.BatchInsertResponse(\x01\x12=\n\x0cStreamSearch\x12\x15.ricedb.SearchRequest\x1a\x14.ricedb.SearchResult0\x01\x12R\n\x0fGrantPermission\x12\x1e.ricedb.GrantPermissionRequest\x1a\x1f.ricedb.GrantPermissionResponse\x12U\n\x10RevokePermission\x12\x1f.ricedb.RevokePermissionRequest\x1a .ricedb.RevokePermissionResponse\x12:\n\x07\x41\x64\x64\x45\x64ge\x12\x16.ricedb.AddEdgeRequest\x1a\x17.ricedb.AddEdgeResponse\x12I\n\x0cGetNeighbors\x12\x1b.ricedb.GetNeighborsRequest\x1a\x1c.ricedb.GetNeighborsResponse\x12L\n\rTraverseGraph\x12\x1c.ricedb.TraverseGraphRequest\x1a\x1d.ricedb.TraverseGraphResponse\x12<\n\tSubscribe\x12\x18.ricedb.SubscribeRequest\x1a\x13.ricedb.PubSubEvent0\x01\x12\x46\n\x0bWriteMemory\x12\x1a.ricedb.WriteMemoryRequest\x1a\x1b.ricedb.WriteMemoryResponse\x12\x43\n\nReadMemory\x12\x19.ricedb.ReadMemoryRequest\x1a\x1a.ricedb.ReadMemoryResponse\x12@\n\tAddMemory\x12\x18.ricedb.AddMemoryRequest\x1a\x19.ricedb.AddMemoryResponse\x12@\n\tGetMemory\x12\x18.ricedb.GetMemoryRequest\x1a\x19.ricedb.GetMemoryResponse\x12\x46\n\x0b\x43learMemory\x12\x1a.ricedb.ClearMemoryRequest\x1a\x1b.ricedb.ClearMemoryResponse\x12@\n\x0bWatchMemory\x12\x1a.ricedb.WatchMemoryRequest\x1a\x13.ricedb.MemoryEvent0\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
+    b'\n\x0cricedb.proto\x12\x06ricedb"2\n\x0cLoginRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t"/\n\rLoginResponse\x12\r\n\x05token\x18\x01 \x01(\t\x12\x0f\n\x07user_id\x18\x02 \x01(\x04"5\n\x0fRegisterRequest\x12\x10\n\x08username\x18\x01 \x01(\t\x12\x10\n\x08password\x18\x02 \x01(\t"4\n\x10RegisterResponse\x12\x0f\n\x07user_id\x18\x01 \x01(\x04\x12\x0f\n\x07message\x18\x02 \x01(\t"\x0f\n\rHealthRequest"1\n\x0eHealthResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t"4\n\x04Node\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x0e\n\x06vector\x18\x02 \x03(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\x0c"N\n\rInsertRequest\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x0e\n\x06vector\x18\x02 \x03(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\x0c\x12\x0f\n\x07user_id\x18\x04 \x01(\x04"C\n\x0eInsertResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07node_id\x18\x02 \x01(\x04\x12\x0f\n\x07message\x18\x03 \x01(\t"6\n\x13\x42\x61tchInsertResponse\x12\r\n\x05\x63ount\x18\x01 \x01(\r\x12\x10\n\x08node_ids\x18\x02 \x03(\x04"!\n\x0eGetNodeRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04"-\n\x0fGetNodeResponse\x12\x1a\n\x04node\x18\x01 \x01(\x0b\x32\x0c.ricedb.Node"$\n\x11\x44\x65leteNodeRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04"6\n\x12\x44\x65leteNodeResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t";\n\rSearchRequest\x12\x0e\n\x06vector\x18\x01 \x03(\x02\x12\x0f\n\x07user_id\x18\x02 \x01(\x04\x12\t\n\x01k\x18\x03 \x01(\r"7\n\x0eSearchResponse\x12%\n\x07results\x18\x01 \x03(\x0b\x32\x14.ricedb.SearchResult"@\n\x0cSearchResult\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x12\n\nsimilarity\x18\x02 \x01(\x02\x12\x10\n\x08metadata\x18\x03 \x01(\x0c":\n\x0bPermissions\x12\x0c\n\x04read\x18\x01 \x01(\x08\x12\r\n\x05write\x18\x02 \x01(\x08\x12\x0e\n\x06\x64\x65lete\x18\x03 \x01(\x08"k\n\x16GrantPermissionRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x16\n\x0etarget_user_id\x18\x02 \x01(\x04\x12(\n\x0bpermissions\x18\x03 \x01(\x0b\x32\x13.ricedb.Permissions";\n\x17GrantPermissionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t"B\n\x17RevokePermissionRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x16\n\x0etarget_user_id\x18\x02 \x01(\x04"<\n\x18RevokePermissionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t"L\n\x0e\x41\x64\x64\x45\x64geRequest\x12\x0c\n\x04\x66rom\x18\x01 \x01(\x04\x12\n\n\x02to\x18\x02 \x01(\x04\x12\x10\n\x08relation\x18\x03 \x01(\t\x12\x0e\n\x06weight\x18\x04 \x01(\x02"3\n\x0f\x41\x64\x64\x45\x64geResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t"J\n\x13GetNeighborsRequest\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x15\n\x08relation\x18\x02 \x01(\tH\x00\x88\x01\x01\x42\x0b\n\t_relation":\n\x14GetNeighborsResponse\x12\x0f\n\x07node_id\x18\x01 \x01(\x04\x12\x11\n\tneighbors\x18\x02 \x03(\x04"8\n\x14TraverseGraphRequest\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x11\n\tmax_depth\x18\x02 \x01(\r"7\n\x15TraverseGraphResponse\x12\r\n\x05start\x18\x01 \x01(\x04\x12\x0f\n\x07visited\x18\x02 \x03(\x04"\x7f\n\x10SubscribeRequest\x12\x13\n\x0b\x66ilter_type\x18\x01 \x01(\t\x12\x14\n\x07node_id\x18\x02 \x01(\x04H\x00\x88\x01\x01\x12\x0e\n\x06vector\x18\x03 \x03(\x02\x12\x16\n\tthreshold\x18\x04 \x01(\x02H\x01\x88\x01\x01\x42\n\n\x08_node_idB\x0c\n\n_threshold"H\n\x0bPubSubEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x1a\n\x04node\x18\x02 \x01(\x0b\x32\x0c.ricedb.Node\x12\x0f\n\x07node_id\x18\x03 \x01(\x04"\x1b\n\tBitVector\x12\x0e\n\x06\x63hunks\x18\x01 \x03(\x04"j\n\x12WriteMemoryRequest\x12"\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0b\x32\x11.ricedb.BitVector\x12\x1f\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x11.ricedb.BitVector\x12\x0f\n\x07user_id\x18\x03 \x01(\x04"7\n\x13WriteMemoryResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t"H\n\x11ReadMemoryRequest\x12"\n\x07\x61\x64\x64ress\x18\x01 \x01(\x0b\x32\x11.ricedb.BitVector\x12\x0f\n\x07user_id\x18\x02 \x01(\x04"5\n\x12ReadMemoryResponse\x12\x1f\n\x04\x64\x61ta\x18\x01 \x01(\x0b\x32\x11.ricedb.BitVector"\xf1\x01\n\x0bMemoryEntry\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nsession_id\x18\x02 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x03 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x04 \x01(\t\x12\x11\n\ttimestamp\x18\x05 \x01(\x03\x12\x33\n\x08metadata\x18\x06 \x03(\x0b\x32!.ricedb.MemoryEntry.MetadataEntry\x12\x17\n\nexpires_at\x18\x07 \x01(\x03H\x00\x88\x01\x01\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x42\r\n\x0b_expires_at"\xde\x01\n\x10\x41\x64\x64MemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\x10\n\x08\x61gent_id\x18\x02 \x01(\t\x12\x0f\n\x07\x63ontent\x18\x03 \x01(\t\x12\x38\n\x08metadata\x18\x04 \x03(\x0b\x32&.ricedb.AddMemoryRequest.MetadataEntry\x12\x18\n\x0bttl_seconds\x18\x05 \x01(\x03H\x00\x88\x01\x01\x1a/\n\rMetadataEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x42\x0e\n\x0c_ttl_seconds"Y\n\x11\x41\x64\x64MemoryResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\x12"\n\x05\x65ntry\x18\x03 \x01(\x0b\x32\x13.ricedb.MemoryEntry"\xb3\x01\n\x10GetMemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t\x12\r\n\x05limit\x18\x02 \x01(\r\x12\x17\n\x0f\x61\x66ter_timestamp\x18\x03 \x01(\x03\x12\x34\n\x06\x66ilter\x18\x04 \x03(\x0b\x32$.ricedb.GetMemoryRequest.FilterEntry\x1a-\n\x0b\x46ilterEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01"9\n\x11GetMemoryResponse\x12$\n\x07\x65ntries\x18\x01 \x03(\x0b\x32\x13.ricedb.MemoryEntry"(\n\x12\x43learMemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t"7\n\x13\x43learMemoryResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t"(\n\x12WatchMemoryRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t"?\n\x0bMemoryEvent\x12\x0c\n\x04type\x18\x01 \x01(\t\x12"\n\x05\x65ntry\x18\x02 \x01(\x0b\x32\x13.ricedb.MemoryEntry2\x86\x0b\n\x06RiceDB\x12\x34\n\x05Login\x12\x14.ricedb.LoginRequest\x1a\x15.ricedb.LoginResponse\x12=\n\x08Register\x12\x17.ricedb.RegisterRequest\x1a\x18.ricedb.RegisterResponse\x12\x37\n\x06Health\x12\x15.ricedb.HealthRequest\x1a\x16.ricedb.HealthResponse\x12\x37\n\x06Insert\x12\x15.ricedb.InsertRequest\x1a\x16.ricedb.InsertResponse\x12:\n\x07GetNode\x12\x16.ricedb.GetNodeRequest\x1a\x17.ricedb.GetNodeResponse\x12\x43\n\nDeleteNode\x12\x19.ricedb.DeleteNodeRequest\x1a\x1a.ricedb.DeleteNodeResponse\x12\x37\n\x06Search\x12\x15.ricedb.SearchRequest\x1a\x16.ricedb.SearchResponse\x12\x43\n\x0b\x42\x61tchInsert\x12\x15.ricedb.InsertRequest\x1a\x1b.ricedb.BatchInsertResponse(\x01\x12=\n\x0cStreamSearch\x12\x15.ricedb.SearchRequest\x1a\x14.ricedb.SearchResult0\x01\x12R\n\x0fGrantPermission\x12\x1e.ricedb.GrantPermissionRequest\x1a\x1f.ricedb.GrantPermissionResponse\x12U\n\x10RevokePermission\x12\x1f.ricedb.RevokePermissionRequest\x1a .ricedb.RevokePermissionResponse\x12:\n\x07\x41\x64\x64\x45\x64ge\x12\x16.ricedb.AddEdgeRequest\x1a\x17.ricedb.AddEdgeResponse\x12I\n\x0cGetNeighbors\x12\x1b.ricedb.GetNeighborsRequest\x1a\x1c.ricedb.GetNeighborsResponse\x12L\n\rTraverseGraph\x12\x1c.ricedb.TraverseGraphRequest\x1a\x1d.ricedb.TraverseGraphResponse\x12<\n\tSubscribe\x12\x18.ricedb.SubscribeRequest\x1a\x13.ricedb.PubSubEvent0\x01\x12\x46\n\x0bWriteMemory\x12\x1a.ricedb.WriteMemoryRequest\x1a\x1b.ricedb.WriteMemoryResponse\x12\x43\n\nReadMemory\x12\x19.ricedb.ReadMemoryRequest\x1a\x1a.ricedb.ReadMemoryResponse\x12@\n\tAddMemory\x12\x18.ricedb.AddMemoryRequest\x1a\x19.ricedb.AddMemoryResponse\x12@\n\tGetMemory\x12\x18.ricedb.GetMemoryRequest\x1a\x19.ricedb.GetMemoryResponse\x12\x46\n\x0b\x43learMemory\x12\x1a.ricedb.ClearMemoryRequest\x1a\x1b.ricedb.ClearMemoryResponse\x12@\n\x0bWatchMemory\x12\x1a.ricedb.WatchMemoryRequest\x1a\x13.ricedb.MemoryEvent0\x01\x62\x06proto3'
+)
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'ricedb_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, "ricedb_pb2", _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
-  _globals['_MEMORYENTRY_METADATAENTRY']._loaded_options = None
-  _globals['_MEMORYENTRY_METADATAENTRY']._serialized_options = b'8\001'
-  _globals['_ADDMEMORYREQUEST_METADATAENTRY']._loaded_options = None
-  _globals['_ADDMEMORYREQUEST_METADATAENTRY']._serialized_options = b'8\001'
-  _globals['_GETMEMORYREQUEST_FILTERENTRY']._loaded_options = None
-  _globals['_GETMEMORYREQUEST_FILTERENTRY']._serialized_options = b'8\001'
-  _globals['_LOGINREQUEST']._serialized_start=24
-  _globals['_LOGINREQUEST']._serialized_end=74
-  _globals['_LOGINRESPONSE']._serialized_start=76
-  _globals['_LOGINRESPONSE']._serialized_end=123
-  _globals['_REGISTERREQUEST']._serialized_start=125
-  _globals['_REGISTERREQUEST']._serialized_end=178
-  _globals['_REGISTERRESPONSE']._serialized_start=180
-  _globals['_REGISTERRESPONSE']._serialized_end=232
-  _globals['_HEALTHREQUEST']._serialized_start=234
-  _globals['_HEALTHREQUEST']._serialized_end=249
-  _globals['_HEALTHRESPONSE']._serialized_start=251
-  _globals['_HEALTHRESPONSE']._serialized_end=300
-  _globals['_NODE']._serialized_start=302
-  _globals['_NODE']._serialized_end=354
-  _globals['_INSERTREQUEST']._serialized_start=356
-  _globals['_INSERTREQUEST']._serialized_end=434
-  _globals['_INSERTRESPONSE']._serialized_start=436
-  _globals['_INSERTRESPONSE']._serialized_end=503
-  _globals['_BATCHINSERTRESPONSE']._serialized_start=505
-  _globals['_BATCHINSERTRESPONSE']._serialized_end=559
-  _globals['_GETNODEREQUEST']._serialized_start=561
-  _globals['_GETNODEREQUEST']._serialized_end=594
-  _globals['_GETNODERESPONSE']._serialized_start=596
-  _globals['_GETNODERESPONSE']._serialized_end=641
-  _globals['_DELETENODEREQUEST']._serialized_start=643
-  _globals['_DELETENODEREQUEST']._serialized_end=679
-  _globals['_DELETENODERESPONSE']._serialized_start=681
-  _globals['_DELETENODERESPONSE']._serialized_end=735
-  _globals['_SEARCHREQUEST']._serialized_start=737
-  _globals['_SEARCHREQUEST']._serialized_end=796
-  _globals['_SEARCHRESPONSE']._serialized_start=798
-  _globals['_SEARCHRESPONSE']._serialized_end=853
-  _globals['_SEARCHRESULT']._serialized_start=855
-  _globals['_SEARCHRESULT']._serialized_end=919
-  _globals['_PERMISSIONS']._serialized_start=921
-  _globals['_PERMISSIONS']._serialized_end=979
-  _globals['_GRANTPERMISSIONREQUEST']._serialized_start=981
-  _globals['_GRANTPERMISSIONREQUEST']._serialized_end=1088
-  _globals['_GRANTPERMISSIONRESPONSE']._serialized_start=1090
-  _globals['_GRANTPERMISSIONRESPONSE']._serialized_end=1149
-  _globals['_REVOKEPERMISSIONREQUEST']._serialized_start=1151
-  _globals['_REVOKEPERMISSIONREQUEST']._serialized_end=1217
-  _globals['_REVOKEPERMISSIONRESPONSE']._serialized_start=1219
-  _globals['_REVOKEPERMISSIONRESPONSE']._serialized_end=1279
-  _globals['_ADDEDGEREQUEST']._serialized_start=1281
-  _globals['_ADDEDGEREQUEST']._serialized_end=1357
-  _globals['_ADDEDGERESPONSE']._serialized_start=1359
-  _globals['_ADDEDGERESPONSE']._serialized_end=1410
-  _globals['_GETNEIGHBORSREQUEST']._serialized_start=1412
-  _globals['_GETNEIGHBORSREQUEST']._serialized_end=1486
-  _globals['_GETNEIGHBORSRESPONSE']._serialized_start=1488
-  _globals['_GETNEIGHBORSRESPONSE']._serialized_end=1546
-  _globals['_TRAVERSEGRAPHREQUEST']._serialized_start=1548
-  _globals['_TRAVERSEGRAPHREQUEST']._serialized_end=1604
-  _globals['_TRAVERSEGRAPHRESPONSE']._serialized_start=1606
-  _globals['_TRAVERSEGRAPHRESPONSE']._serialized_end=1661
-  _globals['_SUBSCRIBEREQUEST']._serialized_start=1663
-  _globals['_SUBSCRIBEREQUEST']._serialized_end=1790
-  _globals['_PUBSUBEVENT']._serialized_start=1792
-  _globals['_PUBSUBEVENT']._serialized_end=1864
-  _globals['_BITVECTOR']._serialized_start=1866
-  _globals['_BITVECTOR']._serialized_end=1893
-  _globals['_WRITEMEMORYREQUEST']._serialized_start=1895
-  _globals['_WRITEMEMORYREQUEST']._serialized_end=2001
-  _globals['_WRITEMEMORYRESPONSE']._serialized_start=2003
-  _globals['_WRITEMEMORYRESPONSE']._serialized_end=2058
-  _globals['_READMEMORYREQUEST']._serialized_start=2060
-  _globals['_READMEMORYREQUEST']._serialized_end=2132
-  _globals['_READMEMORYRESPONSE']._serialized_start=2134
-  _globals['_READMEMORYRESPONSE']._serialized_end=2187
-  _globals['_MEMORYENTRY']._serialized_start=2190
-  _globals['_MEMORYENTRY']._serialized_end=2431
-  _globals['_MEMORYENTRY_METADATAENTRY']._serialized_start=2369
-  _globals['_MEMORYENTRY_METADATAENTRY']._serialized_end=2416
-  _globals['_ADDMEMORYREQUEST']._serialized_start=2434
-  _globals['_ADDMEMORYREQUEST']._serialized_end=2656
-  _globals['_ADDMEMORYREQUEST_METADATAENTRY']._serialized_start=2369
-  _globals['_ADDMEMORYREQUEST_METADATAENTRY']._serialized_end=2416
-  _globals['_ADDMEMORYRESPONSE']._serialized_start=2658
-  _globals['_ADDMEMORYRESPONSE']._serialized_end=2747
-  _globals['_GETMEMORYREQUEST']._serialized_start=2750
-  _globals['_GETMEMORYREQUEST']._serialized_end=2929
-  _globals['_GETMEMORYREQUEST_FILTERENTRY']._serialized_start=2884
-  _globals['_GETMEMORYREQUEST_FILTERENTRY']._serialized_end=2929
-  _globals['_GETMEMORYRESPONSE']._serialized_start=2931
-  _globals['_GETMEMORYRESPONSE']._serialized_end=2988
-  _globals['_CLEARMEMORYREQUEST']._serialized_start=2990
-  _globals['_CLEARMEMORYREQUEST']._serialized_end=3030
-  _globals['_CLEARMEMORYRESPONSE']._serialized_start=3032
-  _globals['_CLEARMEMORYRESPONSE']._serialized_end=3087
-  _globals['_WATCHMEMORYREQUEST']._serialized_start=3089
-  _globals['_WATCHMEMORYREQUEST']._serialized_end=3129
-  _globals['_MEMORYEVENT']._serialized_start=3131
-  _globals['_MEMORYEVENT']._serialized_end=3194
-  _globals['_RICEDB']._serialized_start=3197
-  _globals['_RICEDB']._serialized_end=4611
+    DESCRIPTOR._loaded_options = None
+    _globals["_MEMORYENTRY_METADATAENTRY"]._loaded_options = None
+    _globals["_MEMORYENTRY_METADATAENTRY"]._serialized_options = b"8\001"
+    _globals["_ADDMEMORYREQUEST_METADATAENTRY"]._loaded_options = None
+    _globals["_ADDMEMORYREQUEST_METADATAENTRY"]._serialized_options = b"8\001"
+    _globals["_GETMEMORYREQUEST_FILTERENTRY"]._loaded_options = None
+    _globals["_GETMEMORYREQUEST_FILTERENTRY"]._serialized_options = b"8\001"
+    _globals["_LOGINREQUEST"]._serialized_start = 24
+    _globals["_LOGINREQUEST"]._serialized_end = 74
+    _globals["_LOGINRESPONSE"]._serialized_start = 76
+    _globals["_LOGINRESPONSE"]._serialized_end = 123
+    _globals["_REGISTERREQUEST"]._serialized_start = 125
+    _globals["_REGISTERREQUEST"]._serialized_end = 178
+    _globals["_REGISTERRESPONSE"]._serialized_start = 180
+    _globals["_REGISTERRESPONSE"]._serialized_end = 232
+    _globals["_HEALTHREQUEST"]._serialized_start = 234
+    _globals["_HEALTHREQUEST"]._serialized_end = 249
+    _globals["_HEALTHRESPONSE"]._serialized_start = 251
+    _globals["_HEALTHRESPONSE"]._serialized_end = 300
+    _globals["_NODE"]._serialized_start = 302
+    _globals["_NODE"]._serialized_end = 354
+    _globals["_INSERTREQUEST"]._serialized_start = 356
+    _globals["_INSERTREQUEST"]._serialized_end = 434
+    _globals["_INSERTRESPONSE"]._serialized_start = 436
+    _globals["_INSERTRESPONSE"]._serialized_end = 503
+    _globals["_BATCHINSERTRESPONSE"]._serialized_start = 505
+    _globals["_BATCHINSERTRESPONSE"]._serialized_end = 559
+    _globals["_GETNODEREQUEST"]._serialized_start = 561
+    _globals["_GETNODEREQUEST"]._serialized_end = 594
+    _globals["_GETNODERESPONSE"]._serialized_start = 596
+    _globals["_GETNODERESPONSE"]._serialized_end = 641
+    _globals["_DELETENODEREQUEST"]._serialized_start = 643
+    _globals["_DELETENODEREQUEST"]._serialized_end = 679
+    _globals["_DELETENODERESPONSE"]._serialized_start = 681
+    _globals["_DELETENODERESPONSE"]._serialized_end = 735
+    _globals["_SEARCHREQUEST"]._serialized_start = 737
+    _globals["_SEARCHREQUEST"]._serialized_end = 796
+    _globals["_SEARCHRESPONSE"]._serialized_start = 798
+    _globals["_SEARCHRESPONSE"]._serialized_end = 853
+    _globals["_SEARCHRESULT"]._serialized_start = 855
+    _globals["_SEARCHRESULT"]._serialized_end = 919
+    _globals["_PERMISSIONS"]._serialized_start = 921
+    _globals["_PERMISSIONS"]._serialized_end = 979
+    _globals["_GRANTPERMISSIONREQUEST"]._serialized_start = 981
+    _globals["_GRANTPERMISSIONREQUEST"]._serialized_end = 1088
+    _globals["_GRANTPERMISSIONRESPONSE"]._serialized_start = 1090
+    _globals["_GRANTPERMISSIONRESPONSE"]._serialized_end = 1149
+    _globals["_REVOKEPERMISSIONREQUEST"]._serialized_start = 1151
+    _globals["_REVOKEPERMISSIONREQUEST"]._serialized_end = 1217
+    _globals["_REVOKEPERMISSIONRESPONSE"]._serialized_start = 1219
+    _globals["_REVOKEPERMISSIONRESPONSE"]._serialized_end = 1279
+    _globals["_ADDEDGEREQUEST"]._serialized_start = 1281
+    _globals["_ADDEDGEREQUEST"]._serialized_end = 1357
+    _globals["_ADDEDGERESPONSE"]._serialized_start = 1359
+    _globals["_ADDEDGERESPONSE"]._serialized_end = 1410
+    _globals["_GETNEIGHBORSREQUEST"]._serialized_start = 1412
+    _globals["_GETNEIGHBORSREQUEST"]._serialized_end = 1486
+    _globals["_GETNEIGHBORSRESPONSE"]._serialized_start = 1488
+    _globals["_GETNEIGHBORSRESPONSE"]._serialized_end = 1546
+    _globals["_TRAVERSEGRAPHREQUEST"]._serialized_start = 1548
+    _globals["_TRAVERSEGRAPHREQUEST"]._serialized_end = 1604
+    _globals["_TRAVERSEGRAPHRESPONSE"]._serialized_start = 1606
+    _globals["_TRAVERSEGRAPHRESPONSE"]._serialized_end = 1661
+    _globals["_SUBSCRIBEREQUEST"]._serialized_start = 1663
+    _globals["_SUBSCRIBEREQUEST"]._serialized_end = 1790
+    _globals["_PUBSUBEVENT"]._serialized_start = 1792
+    _globals["_PUBSUBEVENT"]._serialized_end = 1864
+    _globals["_BITVECTOR"]._serialized_start = 1866
+    _globals["_BITVECTOR"]._serialized_end = 1893
+    _globals["_WRITEMEMORYREQUEST"]._serialized_start = 1895
+    _globals["_WRITEMEMORYREQUEST"]._serialized_end = 2001
+    _globals["_WRITEMEMORYRESPONSE"]._serialized_start = 2003
+    _globals["_WRITEMEMORYRESPONSE"]._serialized_end = 2058
+    _globals["_READMEMORYREQUEST"]._serialized_start = 2060
+    _globals["_READMEMORYREQUEST"]._serialized_end = 2132
+    _globals["_READMEMORYRESPONSE"]._serialized_start = 2134
+    _globals["_READMEMORYRESPONSE"]._serialized_end = 2187
+    _globals["_MEMORYENTRY"]._serialized_start = 2190
+    _globals["_MEMORYENTRY"]._serialized_end = 2431
+    _globals["_MEMORYENTRY_METADATAENTRY"]._serialized_start = 2369
+    _globals["_MEMORYENTRY_METADATAENTRY"]._serialized_end = 2416
+    _globals["_ADDMEMORYREQUEST"]._serialized_start = 2434
+    _globals["_ADDMEMORYREQUEST"]._serialized_end = 2656
+    _globals["_ADDMEMORYREQUEST_METADATAENTRY"]._serialized_start = 2369
+    _globals["_ADDMEMORYREQUEST_METADATAENTRY"]._serialized_end = 2416
+    _globals["_ADDMEMORYRESPONSE"]._serialized_start = 2658
+    _globals["_ADDMEMORYRESPONSE"]._serialized_end = 2747
+    _globals["_GETMEMORYREQUEST"]._serialized_start = 2750
+    _globals["_GETMEMORYREQUEST"]._serialized_end = 2929
+    _globals["_GETMEMORYREQUEST_FILTERENTRY"]._serialized_start = 2884
+    _globals["_GETMEMORYREQUEST_FILTERENTRY"]._serialized_end = 2929
+    _globals["_GETMEMORYRESPONSE"]._serialized_start = 2931
+    _globals["_GETMEMORYRESPONSE"]._serialized_end = 2988
+    _globals["_CLEARMEMORYREQUEST"]._serialized_start = 2990
+    _globals["_CLEARMEMORYREQUEST"]._serialized_end = 3030
+    _globals["_CLEARMEMORYRESPONSE"]._serialized_start = 3032
+    _globals["_CLEARMEMORYRESPONSE"]._serialized_end = 3087
+    _globals["_WATCHMEMORYREQUEST"]._serialized_start = 3089
+    _globals["_WATCHMEMORYREQUEST"]._serialized_end = 3129
+    _globals["_MEMORYEVENT"]._serialized_start = 3131
+    _globals["_MEMORYEVENT"]._serialized_end = 3194
+    _globals["_RICEDB"]._serialized_start = 3197
+    _globals["_RICEDB"]._serialized_end = 4611
 # @@protoc_insertion_point(module_scope)

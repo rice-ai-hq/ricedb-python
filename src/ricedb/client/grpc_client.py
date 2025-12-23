@@ -391,12 +391,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
 
         try:
             # "from" is a reserved keyword, so we use kwargs
-            kwargs = {
-                "from": from_node,
-                "to": to_node,
-                "relation": relation,
-                "weight": weight
-            }
+            kwargs = {"from": from_node, "to": to_node, "relation": relation, "weight": weight}
             request = ricedb_pb2.AddEdgeRequest(**kwargs)  # ty:ignore[unresolved-attribute]
             response = self.stub.AddEdge(request, metadata=self._metadata())
             return response.success
@@ -543,7 +538,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 "content": response.entry.content,
                 "timestamp": response.entry.timestamp,
                 "metadata": dict(response.entry.metadata),
-                "expires_at": response.entry.expires_at if response.entry.HasField("expires_at") else None,
+                "expires_at": response.entry.expires_at
+                if response.entry.HasField("expires_at")
+                else None,
             }
 
             return {
@@ -610,7 +607,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
 
         try:
             request = ricedb_pb2.WatchMemoryRequest(session_id=session_id)  # ty:ignore[unresolved-attribute]
-            
+
             for event in self.stub.WatchMemory(request, metadata=self._metadata()):
                 entry = event.entry
                 yield {
@@ -622,7 +619,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                         "content": entry.content,
                         "timestamp": entry.timestamp,
                         "metadata": dict(entry.metadata),
-                    }
+                    },
                 }
         except grpc.RpcError as e:
             raise RiceDBError(f"Watch memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904

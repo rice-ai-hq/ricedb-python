@@ -3,7 +3,7 @@ Base abstract class for RiceDB clients.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 
 class BaseRiceDBClient(ABC):
@@ -379,6 +379,53 @@ class BaseRiceDBClient(ABC):
 
         Returns:
             True if successful
+        """
+        pass
+
+    @abstractmethod
+    def get_neighbors(self, node_id: int, relation: Optional[str] = None) -> List[int]:
+        """Get neighbors of a node.
+
+        Args:
+            node_id: Node ID
+            relation: Optional relation type filter
+
+        Returns:
+            List of neighbor node IDs
+        """
+        pass
+
+    @abstractmethod
+    def traverse(self, start_node: int, max_depth: int = 1) -> List[int]:
+        """Traverse the graph from a start node.
+
+        Args:
+            start_node: Starting node ID
+            max_depth: Maximum traversal depth
+
+        Returns:
+            List of visited node IDs
+        """
+        pass
+
+    @abstractmethod
+    def subscribe(
+        self,
+        filter_type: str = "all",
+        node_id: Optional[int] = None,
+        vector: Optional[List[float]] = None,
+        threshold: float = 0.8,
+    ) -> Iterator[Dict[str, Any]]:
+        """Subscribe to real-time events.
+
+        Args:
+            filter_type: Filter type ("all", "node", "vector")
+            node_id: Node ID (for "node" filter)
+            vector: Query vector (for "vector" filter)
+            threshold: Similarity threshold (for "vector" filter)
+
+        Yields:
+            Events as dictionaries
         """
         pass
 

@@ -2,7 +2,7 @@
 Unified client interface that automatically selects the best transport.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from ..exceptions import ConnectionError, RiceDBError
 from .base_client import BaseRiceDBClient
@@ -25,7 +25,7 @@ class Memory:
         ttl: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Add to agent memory.
-        
+
         Args:
             session_id: Session ID
             agent: Agent ID
@@ -43,7 +43,7 @@ class Memory:
         filter: Optional[Dict[str, str]] = None,
     ) -> List[Dict[str, Any]]:
         """Get agent memory.
-        
+
         Args:
             session_id: Session ID
             limit: Max entries to return
@@ -498,3 +498,21 @@ class RiceDBClient(BaseRiceDBClient):
         """Get neighbors of a node."""
         client = self._get_client()
         return client.get_neighbors(node_id, relation)
+
+    def traverse(self, start_node: int, max_depth: int = 1) -> List[int]:
+        """Traverse the graph from a start node."""
+        client = self._get_client()
+        return client.traverse(start_node, max_depth)
+
+    def subscribe(
+        self,
+        filter_type: str = "all",
+        node_id: Optional[int] = None,
+        vector: Optional[List[float]] = None,
+        threshold: float = 0.8,
+    ) -> Iterator[Dict[str, Any]]:
+        """Subscribe to real-time events."""
+        client = self._get_client()
+        return client.subscribe(
+            filter_type=filter_type, node_id=node_id, vector=vector, threshold=threshold
+        )

@@ -2,7 +2,7 @@
 HTTP client implementation for RiceDB.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 import requests
 
@@ -522,9 +522,10 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             params = {"limit": limit}
             if after is not None:
                 params["after_timestamp"] = after
-            
-            # Note: Complex filter map not yet fully supported via simple query params in HTTP endpoint
-            # We skip sending filter for now if it's complex, or we could JSON encode it if server supported it.
+
+            # Note: Complex filter map not yet fully supported via simple query params in HTTP
+            # endpoint. We skip sending filter for now if it's complex, or we could JSON encode
+            # it if server supported it.
             # Server implementation currently ignores filter in HTTP handler for simplicity.
 
             response = self.session.get(
@@ -552,3 +553,25 @@ class HTTPRiceDBClient(BaseRiceDBClient):
     def watch_memory(self, session_id: str):
         """Watch for new memory events in a session."""
         raise RiceDBError("Watch memory is not supported via HTTP transport. Use gRPC.")
+
+    def add_edge(self, from_node: int, to_node: int, relation: str, weight: float = 1.0) -> bool:
+        """Add an edge between two nodes."""
+        raise RiceDBError("Add edge is not supported via HTTP transport. Use gRPC.")
+
+    def get_neighbors(self, node_id: int, relation: Optional[str] = None) -> List[int]:
+        """Get neighbors of a node."""
+        raise RiceDBError("Get neighbors is not supported via HTTP transport. Use gRPC.")
+
+    def traverse(self, start_node: int, max_depth: int = 1) -> List[int]:
+        """Traverse the graph from a start node."""
+        raise RiceDBError("Traverse is not supported via HTTP transport. Use gRPC.")
+
+    def subscribe(
+        self,
+        filter_type: str = "all",
+        node_id: Optional[int] = None,
+        vector: Optional[List[float]] = None,
+        threshold: float = 0.8,
+    ) -> Iterator[Dict[str, Any]]:
+        """Subscribe to real-time events."""
+        raise RiceDBError("Subscribe is not supported via HTTP transport. Use gRPC.")
