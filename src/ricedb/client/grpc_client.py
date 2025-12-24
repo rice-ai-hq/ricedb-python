@@ -78,7 +78,13 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             True if connection successful, False otherwise
         """
         try:
-            self.channel = grpc.insecure_channel(self.address, options=self.options)
+            if self.ssl:
+                # Use default SSL credentials (system CA)
+                creds = grpc.ssl_channel_credentials()
+                self.channel = grpc.secure_channel(self.address, creds, options=self.options)
+            else:
+                self.channel = grpc.insecure_channel(self.address, options=self.options)
+
             self.stub = ricedb_pb2_grpc.RiceDBStub(self.channel)
 
             # Test connection with health check
@@ -304,17 +310,29 @@ class GrpcRiceDBClient(BaseRiceDBClient):
 
         return self.batch_insert(documents)
 
-    def register(self, username: str, password: str) -> int:
-        """Register a new user."""
+    def create_user(self, username: str, password: str, role: str = "user") -> int:
+        """Create a new user (Admin only)."""
         if not self.stub:
             raise ConnectionError("Not connected to server")
 
         try:
-            request = ricedb_pb2.RegisterRequest(username=username, password=password)  # ty:ignore[unresolved-attribute]
-            response = self.stub.Register(request)
+            request = ricedb_pb2.CreateUserRequest(username=username, password=password, role=role)  # ty:ignore[unresolved-attribute]
+            response = self.stub.CreateUser(request, metadata=self._metadata())
             return response.user_id
         except grpc.RpcError as e:
-            raise ConnectionError(f"Registration failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+            raise ConnectionError(f"Create user failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def delete_user(self, username: str) -> bool:
+        """Delete a user (Admin only)."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+
+        try:
+            request = ricedb_pb2.DeleteUserRequest(username=username)  # ty:ignore[unresolved-attribute]
+            response = self.stub.DeleteUser(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise ConnectionError(f"Delete user failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
     def get(self, node_id: int) -> Optional[Dict[str, Any]]:
         """Get a document by ID."""

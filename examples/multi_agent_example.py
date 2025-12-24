@@ -25,26 +25,54 @@ def main():
         return
     print(f"   ✓ Connected via {client.get_transport_info()['type'].upper()}")
 
-    # User IDs for different roles
-    users = {
-        "alice": {"id": 100, "role": "Manager", "dept": "Finance"},
-        "bob": {"id": 200, "role": "Engineer", "dept": "Engineering"},
-        "charlie": {"id": 300, "role": "Marketing", "dept": "Marketing"},
-        "diana": {"id": 400, "role": "HR", "dept": "Human Resources"},
+    # Authenticate as Admin
+    print("   🔑 Logging in as Admin...")
+    try:
+        client.login("admin", "admin")
+    except Exception as e:
+        print(f"   ❌ Login failed: {e}")
+        return
+
+    # User configuration
+    users_config = {
+        "alice": {"role": "Manager", "dept": "Finance", "pass": "alice123"},
+        "bob": {"role": "Engineer", "dept": "Engineering", "pass": "bob123"},
+        "charlie": {"role": "Marketing", "dept": "Marketing", "pass": "charlie123"},
+        "diana": {"role": "HR", "dept": "Human Resources", "pass": "diana123"},
     }
 
-    print("\n2️⃣  User configuration:")
-    for name, info in users.items():
-        print(
-            f"   - {name.title()} (ID: {info['id']}): {info['role']} in {info['dept']}"
-        )
+    # Create users and get real IDs
+    print("\n2️⃣  Creating users...")
+    users = {}
+    user_clients = {}
+
+    for name, info in users_config.items():
+        try:
+            # Cleanup if exists
+            try:
+                client.delete_user(name)
+            except:
+                pass
+
+            user_id = client.create_user(name, info["pass"], role="user")
+            users[name] = {**info, "id": user_id}
+            print(f"   ✓ Created {name} (ID: {user_id})")
+
+            # Create authenticated client for this user
+            u_client = RiceDBClient("localhost")
+            u_client.connect()
+            u_client.login(name, info["pass"])
+            user_clients[name] = u_client
+
+        except Exception as e:
+            print(f"   ❌ Failed to create {name}: {e}")
 
     # Prepare documents for each user
     print("\n3️⃣  Preparing user-specific documents...")
     embedding_gen = DummyEmbeddingGenerator()
 
     documents_by_user = {
-        100: [  # Alice - Finance Manager
+        "alice": [  # Alice - Finance Manager
             {"id": 1001, "text": "Q4 Budget Report", "type": "Financial Report"},
             {"id": 1002, "text": "Salary Structure Review", "type": "HR Document"},
             {
@@ -53,7 +81,7 @@ def main():
                 "type": "Financial Analysis",
             },
         ],
-        200: [  # Bob - Engineer
+        "bob": [  # Bob - Engineer
             {"id": 2001, "text": "API Documentation", "type": "Technical Doc"},
             {
                 "id": 2002,
@@ -62,27 +90,32 @@ def main():
             },
             {"id": 2003, "text": "Code Review Guidelines", "type": "Process Doc"},
         ],
-        300: [  # Charlie - Marketing
+        "charlie": [  # Charlie - Marketing
             {"id": 3001, "text": "Product Launch Campaign", "type": "Marketing Plan"},
             {"id": 3002, "text": "Social Media Strategy", "type": "Marketing Doc"},
             {"id": 3003, "text": "Brand Guidelines", "type": "Brand Doc"},
         ],
-        400: [  # Diana - HR
+        "diana": [  # Diana - HR
             {"id": 4001, "text": "Employee Handbook", "type": "HR Policy"},
             {"id": 4002, "text": "Performance Review Process", "type": "HR Process"},
             {"id": 4003, "text": "Training Programs", "type": "Training Doc"},
         ],
     }
 
-    # Insert documents for each user
+    # Insert documents for each user (using their own client)
     print("\n4️⃣  Inserting documents with user-specific ACL...")
-    for user_id, docs in documents_by_user.items():
-        user_name = next(name for name, info in users.items() if info["id"] == user_id)
+    for user_name, docs in documents_by_user.items():
+        user_id = users[user_name]["id"]
+        u_client = user_clients[user_name]
+
         print(f"\n   Inserting documents for {user_name.title()} (User ID: {user_id}):")
 
         for doc in docs:
             try:
-                result = client.insert_text(
+                # We use insert_text. Note that user_id param is ignored by server for ownership,
+                # but might be used by client logic if we pass it.
+                # Since u_client is authenticated as user, they become the owner.
+                result = u_client.insert_text(
                     node_id=doc["id"],
                     text=doc["text"],
                     metadata={
@@ -91,7 +124,6 @@ def main():
                         "department": users[user_name]["dept"],
                     },
                     embedding_generator=embedding_gen,
-                    user_id=user_id,
                 )
                 print(f"     ✓ {doc['text']} ({doc['type']})")
             except Exception as e:
@@ -101,20 +133,17 @@ def main():
     print("\n5️⃣  Searching as each user (ACL-enforced)...")
     search_query = "guidelines"
 
-    for user_id, user_info in users.items():
-        user_name = (
-            user_info["name"]
-            if "name" in user_info
-            else next(name for name, info in users.items() if info["id"] == user_id)
-        )
+    for user_name, user_info in users.items():
+        user_id = user_info["id"]
+        u_client = user_clients[user_name]
+
         print(f"\n   Search as {user_name.title()} (User ID: {user_id}):")
         print(f"   Query: '{search_query}'")
 
         try:
-            results = client.search_text(
+            results = u_client.search_text(
                 query=search_query,
                 embedding_generator=embedding_gen,
-                user_id=user_id,
                 k=5,
             )
 
@@ -134,27 +163,22 @@ def main():
 
     # Cross-user access attempt
     print("\n6️⃣  Testing cross-user access control...")
-    alice_id = users["alice"]["id"]
-    bob_id = users["bob"]["id"]
+    alice_client = user_clients["alice"]
+    bob_client = user_clients["bob"]
 
     # Alice trying to search Bob's documents
-    print(f"\n   Alice (User ID: {alice_id}) searching for Bob's documents:")
+    print(f"\n   Alice searching for 'API' (Bob's docs):")
     try:
-        # Alice searches for "API" which should be in Bob's documents
-        results = client.search_text(
-            query="API", embedding_generator=embedding_gen, user_id=alice_id, k=5
-        )
+        results = alice_client.search_text(query="API", embedding_generator=embedding_gen, k=5)
         print(f"   Alice found {len(results)} API-related documents")
         # Should find 0 if ACL is working properly
     except Exception as e:
         print(f"   ❌ Error: {e}")
 
     # Bob searching for his own API documents
-    print(f"\n   Bob (User ID: {bob_id}) searching for API documents:")
+    print(f"\n   Bob searching for 'API':")
     try:
-        results = client.search_text(
-            query="API", embedding_generator=embedding_gen, user_id=bob_id, k=5
-        )
+        results = bob_client.search_text(query="API", embedding_generator=embedding_gen, k=5)
         print(f"   Bob found {len(results)} API-related documents:")
         for result in results:
             metadata = result["metadata"]
@@ -166,38 +190,32 @@ def main():
     # Shared document example (accessible by all)
     print("\n7️⃣  Inserting a shared document...")
     try:
-        # Insert a document as user 100 but make it accessible to others
-        # Note: In a real implementation, you'd need ACL modification APIs
-        # For now, we'll insert documents for each user with the same content
+        # Alice creates a document and shares it with everyone
         shared_text = "Company Holiday Schedule 2024"
-        shared_type = "Company Policy"
+        shared_id = 9999
 
-        for user_id in users.values():
-            user_id = user_id["id"]
-            shared_doc_id = 5000 + user_id  # Unique ID per user
+        alice_client.insert_text(
+            node_id=shared_id,
+            text=shared_text,
+            metadata={"type": "Company Policy", "access": "all", "shared": True},
+            embedding_generator=embedding_gen,
+        )
+        print(f"   ✓ Alice inserted '{shared_text}'")
 
-            client.insert_text(
-                node_id=shared_doc_id,
-                text=shared_text,
-                metadata={"type": shared_type, "access": "all", "shared": True},
-                embedding_generator=embedding_gen,
-                user_id=user_id,
+        # Alice grants read permission to others
+        print("   ✓ Granting read access to Bob, Charlie, Diana...")
+        for name in ["bob", "charlie", "diana"]:
+            uid = users[name]["id"]
+            alice_client.grant_permission(
+                shared_id, uid, {"read": True, "write": False, "delete": False}
             )
-
-        print(f"   ✓ Inserted '{shared_text}' for all users")
 
         # Each user should now be able to find it
         print("\n   All users searching for 'holiday schedule':")
-        for user_info in users.values():
-            user_id = user_info["id"]
-            user_name = next(
-                name for name, info in users.items() if info["id"] == user_id
-            )
-
-            results = client.search_text(
+        for user_name, u_client in user_clients.items():
+            results = u_client.search_text(
                 query="holiday schedule",
                 embedding_generator=embedding_gen,
-                user_id=user_id,
                 k=3,
             )
             print(f"   - {user_name.title()}: Found {len(results)} result(s)")
@@ -207,15 +225,12 @@ def main():
 
     # Cleanup
     print("\n8️⃣  Cleanup...")
+    for c in user_clients.values():
+        c.disconnect()
     client.disconnect()
     print("   ✓ Disconnected from server")
 
     print("\n✅ Multi-user ACL example completed!")
-    print("\n💡 Key observations:")
-    print("   - Users can only see their own documents")
-    print("   - ACL enforcement happens at the server level")
-    print("   - Shared documents can be implemented per user")
-    print("   - User isolation ensures data privacy")
 
 
 if __name__ == "__main__":

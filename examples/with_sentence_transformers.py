@@ -29,6 +29,11 @@ def main():
             return
         transport_info = client.get_transport_info()
         print(f"   ✓ Connected via {transport_info['type'].upper()}")
+
+        # Login
+        print("   🔑 Logging in...")
+        client.login("admin", "admin")
+        print("   ✓ Logged in as admin")
     except Exception as e:
         print(f"   ❌ Connection error: {e}")
         return
@@ -36,9 +41,7 @@ def main():
     # Initialize Sentence Transformers embedding generator
     print("\n2️⃣  Initializing Sentence Transformers...")
     try:
-        embed_gen = SentenceTransformersEmbeddingGenerator(
-            model_name="all-MiniLM-L6-v2"
-        )
+        embed_gen = SentenceTransformersEmbeddingGenerator(model_name="all-MiniLM-L6-v2")
         print(f"   ✓ Model loaded: {embed_gen.model_name}")
     except Exception as e:
         print(f"   ❌ Failed to load model: {e}")
@@ -124,9 +127,7 @@ def main():
                 text = metadata.get("text", "No text")
                 category = metadata.get("category", "Unknown")
                 similarity = result.get("similarity", 0)
-                print(
-                    f"   {i}. [{category}] {text[:60]}... - similarity: {similarity:.4f}"
-                )
+                print(f"   {i}. [{category}] {text[:60]}... - similarity: {similarity:.4f}")
         except Exception as e:
             print(f"   ❌ Search error: {e}")
 

@@ -49,32 +49,54 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             response.raise_for_status()
             data = response.json()
             self.token = data["token"]
+            self.role = data.get("role")
             self.session.headers.update({"Authorization": f"Bearer {self.token}"})
             return self.token
         except requests.RequestException as e:
             raise AuthenticationError(f"Login failed: {e}")  # noqa: B904, F821  # ty:ignore[unresolved-reference]
 
-    def register(self, username: str, password: str) -> int:
-        """Register a new user.
+    def create_user(self, username: str, password: str, role: str = "user") -> int:
+        """Create a new user (Admin only).
 
         Args:
             username: Username
             password: Password
+            role: User role ("admin" or "user")
 
         Returns:
             User ID
         """
         try:
             response = self.session.post(
-                f"{self.base_url}/auth/register",
-                json={"username": username, "password": password},
+                f"{self.base_url}/auth/create_user",
+                json={"username": username, "password": password, "role": role},
                 timeout=self.timeout,
             )
             response.raise_for_status()
             data = response.json()
             return data["user_id"]
         except requests.RequestException as e:
-            raise AuthenticationError(f"Registration failed: {e}")  # noqa: B904
+            raise AuthenticationError(f"Create user failed: {e}")  # noqa: B904
+
+    def delete_user(self, username: str) -> bool:
+        """Delete a user (Admin only).
+
+        Args:
+            username: Username to delete
+
+        Returns:
+            True if successful
+        """
+        try:
+            response = self.session.delete(
+                f"{self.base_url}/auth/delete_user",
+                json={"username": username},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            raise AuthenticationError(f"Delete user failed: {e}")  # noqa: B904
 
     def delete(self, node_id: int, user_id: int = 1) -> bool:
         """Delete a document by ID.

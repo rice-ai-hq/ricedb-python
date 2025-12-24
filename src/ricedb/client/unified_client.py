@@ -194,18 +194,31 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.login(username, password)
 
-    def register(self, username: str, password: str) -> int:
-        """Register a new user.
+    def create_user(self, username: str, password: str, role: str = "user") -> int:
+        """Create a new user (Admin only).
 
         Args:
             username: Username
             password: Password
+            role: User role ("admin" or "user")
 
         Returns:
             User ID
         """
         client = self._get_client()
-        return client.register(username, password)
+        return client.create_user(username, password, role)
+
+    def delete_user(self, username: str) -> bool:
+        """Delete a user (Admin only).
+
+        Args:
+            username: Username to delete
+
+        Returns:
+            True if successful
+        """
+        client = self._get_client()
+        return client.delete_user(username)
 
     def delete(self, node_id: int) -> bool:
         """Delete a document by ID.

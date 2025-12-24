@@ -278,3 +278,25 @@ class TestGrpcRiceDBClient:
         client.insert_with_acl(1, [1.0], {}, [])
 
         client.insert.assert_called_with(1, [1.0], {})
+
+    def test_create_user(self, client, mock_pb2):
+        """Test create user."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.user_id = 123
+        client.stub.CreateUser.return_value = mock_response
+
+        assert client.create_user("user", "pass", role="user") == 123
+
+        mock_pb2.CreateUserRequest.assert_called_with(username="user", password="pass", role="user")
+
+    def test_delete_user(self, client, mock_pb2):
+        """Test delete user."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.success = True
+        client.stub.DeleteUser.return_value = mock_response
+
+        assert client.delete_user("user") is True
+
+        mock_pb2.DeleteUserRequest.assert_called_with(username="user")

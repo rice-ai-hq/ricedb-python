@@ -24,16 +24,19 @@ def main():
         if client.connect():
             transport_info = client.get_transport_info()
             print(f"   ✓ Connected via {transport_info['type'].upper()}")
+
+            # Login as admin (default credentials)
+            print("   🔑 Logging in...")
+            client.login("admin", "admin")
+            print("   ✓ Logged in successfully")
         else:
             print("   ❌ Failed to connect to RiceDB server")
             print("   Make sure the server is running:")
             print("   - HTTP: cargo run --example http_server --features http-server")
-            print(
-                "   - gRPC: cargo run --bin ricedb-server-grpc --features grpc-server"
-            )
+            print("   - gRPC: cargo run --bin ricedb-server-grpc --features grpc-server")
             return
     except Exception as e:
-        print(f"   ❌ Connection error: {e}")
+        print(f"   ❌ Connection/Login error: {e}")
         return
 
     # Check server health

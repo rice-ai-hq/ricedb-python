@@ -45,6 +45,12 @@ class MockGrpc:
     def read_memory(self, *args, **kwargs):
         return {}
 
+    def create_user(self, *args, **kwargs):
+        return 1
+
+    def delete_user(self, *args, **kwargs):
+        return True
+
 
 class MockHttp:
     """Mock HTTP client class."""
@@ -94,6 +100,12 @@ class MockHttp:
 
     def read_memory(self, *args, **kwargs):
         return {}
+
+    def create_user(self, *args, **kwargs):
+        return 1
+
+    def delete_user(self, *args, **kwargs):
+        return True
 
 
 class TestRiceDBClient:
@@ -199,3 +211,23 @@ class TestRiceDBClient:
             client._client.insert = MagicMock()
             client.insert(1, [1.0], {})
             client._client.insert.assert_called_once()
+
+    def test_create_user_delegation(self):
+        """Test delegation of create_user method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.create_user = MagicMock()
+            client.create_user("user", "pass")
+            client._client.create_user.assert_called_once()
+
+    def test_delete_user_delegation(self):
+        """Test delegation of delete_user method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.delete_user = MagicMock()
+            client.delete_user("user")
+            client._client.delete_user.assert_called_once()

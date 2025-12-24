@@ -9,15 +9,17 @@ from typing import Any, Dict, Iterator, List, Optional
 class BaseRiceDBClient(ABC):
     """Abstract base class for RiceDB clients."""
 
-    def __init__(self, host: str = "localhost", port: int = 3000):
+    def __init__(self, host: str = "localhost", port: int = 3000, ssl: bool = False):
         """Initialize the client.
 
         Args:
             host: Server hostname
             port: Server port
+            ssl: Use SSL/TLS connection
         """
         self.host = host
         self.port = port
+        self.ssl = ssl
         self._connected = False
 
     @abstractmethod
@@ -57,15 +59,28 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def register(self, username: str, password: str) -> int:
-        """Register a new user.
+    def create_user(self, username: str, password: str, role: str = "user") -> int:
+        """Create a new user (Admin only).
 
         Args:
             username: Username
             password: Password
+            role: User role ("admin" or "user")
 
         Returns:
             User ID
+        """
+        pass
+
+    @abstractmethod
+    def delete_user(self, username: str) -> bool:
+        """Delete a user (Admin only).
+
+        Args:
+            username: Username to delete
+
+        Returns:
+            True if successful
         """
         pass
 

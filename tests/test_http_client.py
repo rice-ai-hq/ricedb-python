@@ -72,6 +72,35 @@ class TestHTTPRiceDBClient:
         with pytest.raises(ConnectionError, match="Health check failed"):
             client.health()
 
+    def test_create_user(self, client, mock_session):
+        """Test create user."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"user_id": 123}
+        mock_session.post.return_value = mock_response
+
+        user_id = client.create_user("user", "pass", role="user")
+        assert user_id == 123
+
+        mock_session.post.assert_called_with(
+            "http://localhost:3000/auth/create_user",
+            json={"username": "user", "password": "pass", "role": "user"},
+            timeout=30,
+        )
+
+    def test_delete_user(self, client, mock_session):
+        """Test delete user."""
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        mock_session.delete.return_value = mock_response
+
+        assert client.delete_user("user") is True
+
+        mock_session.delete.assert_called_with(
+            "http://localhost:3000/auth/delete_user",
+            json={"username": "user"},
+            timeout=30,
+        )
+
     def test_insert_success(self, client, mock_session):
         """Test successful insertion."""
         mock_response = MagicMock()

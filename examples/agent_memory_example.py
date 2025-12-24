@@ -44,14 +44,8 @@ def main():
 
     # Authenticate
     try:
-        # Try to register first (ignore if exists)
-        try:
-            client.register("admin", "password123")
-        except:
-            pass
-        
         # Login
-        client.login("admin", "password123")
+        client.login("admin", "admin")
         print_success("Authenticated as 'admin'")
     except Exception as e:
         print(f"❌ Authentication failed: {e}")
@@ -59,7 +53,7 @@ def main():
 
     # Scenario: Code Review Session
     session_id = "code-review-101"
-    
+
     # 1. Clear previous session memory (for a fresh start)
     print_section("1. Initialization")
     print_info(f"Clearing memory for session: {session_id}")
@@ -75,27 +69,24 @@ def main():
         session_id=session_id,
         agent="ScannerAgent",
         content="Started static analysis on src/auth/mod.rs",
-        metadata={"status": "in-progress", "target": "src/auth/mod.rs"}
+        metadata={"status": "in-progress", "target": "src/auth/mod.rs"},
     )
-    time.sleep(0.5) # Simulate work
+    time.sleep(0.5)  # Simulate work
 
     client.memory.add(
         session_id=session_id,
         agent="ScannerAgent",
         content="Found potential hardcoded secret in login function.",
-        metadata={"priority": "high", "line": "42"}
+        metadata={"priority": "high", "line": "42"},
     )
     print_success("ScannerAgent logged findings.")
 
     # Agent 2: Reviewer (Reacts to Scanner)
     print_info("ReviewerAgent is filtering memory for 'high' priority findings...")
-    
+
     # Retrieve only high priority entries using server-side filtering
-    high_priority_findings = client.memory.get(
-        session_id=session_id, 
-        filter={"priority": "high"}
-    )
-    
+    high_priority_findings = client.memory.get(session_id=session_id, filter={"priority": "high"})
+
     print(f"\n[High Priority Findings: {len(high_priority_findings)}]")
     for entry in high_priority_findings:
         print(f"  - [{entry['agent_id']}] {entry['content']}")
@@ -108,21 +99,21 @@ def main():
             session_id=session_id,
             agent="ReviewerAgent",
             content="I verified the finding. It is indeed a hardcoded string.",
-            metadata={"verdict": "confirmed", "refers_to": last_entry['id']},
-            ttl=3600 # Keep this verification for 1 hour only
+            metadata={"verdict": "confirmed", "refers_to": last_entry["id"]},
+            ttl=3600,  # Keep this verification for 1 hour only
         )
         print_success("ReviewerAgent added confirmation with 1h TTL.")
 
     # 3. Real-time Watch (gRPC only)
     print_section("3. Real-time Watch (Pub/Sub)")
-    
-    transport = client.get_transport_info()['type']
+
+    transport = client.get_transport_info()["type"]
     if transport == "grpc":
         print_info("Watching for next message (blocking)...")
-        
+
         # In a real app, this would be in a separate thread/process
-        # Here we simulate a producer in the background? 
-        # Since we are single-threaded here, we can't easily demo blocking watch 
+        # Here we simulate a producer in the background?
+        # Since we are single-threaded here, we can't easily demo blocking watch
         # AND produce at the same time without threads.
         # Let's just describe it or skip blocking call in this simple script.
         print("   (Skipping blocking watch in single-threaded demo. See docs for usage.)")
@@ -136,16 +127,16 @@ def main():
         # Create nodes representing files/concepts
         client.insert_text(101, "auth.ts authentication logic", {"type": "file"}, user_id=1)
         client.insert_text(102, "login.ts user login page", {"type": "file"}, user_id=1)
-        
+
         # Link them
         print_info("Linking auth.ts -> IMPORTS -> login.ts")
         client.link(102, "IMPORTS", 101)
         print_success("Link created.")
-        
+
         # Verify neighbors
         neighbors = client.get_neighbors(102, relation="IMPORTS")
         print(f"   Neighbors of login.ts (IMPORTS): {neighbors}")
-        
+
     except Exception as e:
         print(f"   (Graph op failed: {e})")
 
@@ -154,6 +145,7 @@ def main():
     print("without the overhead of vector embeddings or polluting the main search index.")
 
     client.disconnect()
+
 
 if __name__ == "__main__":
     main()
