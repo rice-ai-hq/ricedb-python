@@ -641,3 +641,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 }
         except grpc.RpcError as e:
             raise RiceDBError(f"Watch memory failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def sample_graph(self, limit: int = 100) -> Dict[str, Any]:
+        """Get a random sample of the graph for visualization."""
+        raise RiceDBError("Sample graph is not supported via gRPC transport. Use HTTP.")

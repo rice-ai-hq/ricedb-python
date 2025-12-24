@@ -517,6 +517,11 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.traverse(start_node, max_depth)
 
+    def sample_graph(self, limit: int = 100) -> Dict[str, Any]:
+        """Get a random sample of the graph for visualization."""
+        client = self._get_client()
+        return client.sample_graph(limit)
+
     def subscribe(
         self,
         filter_type: str = "all",

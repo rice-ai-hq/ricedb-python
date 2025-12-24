@@ -576,17 +576,66 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         """Watch for new memory events in a session."""
         raise RiceDBError("Watch memory is not supported via HTTP transport. Use gRPC.")
 
+    def sample_graph(self, limit: int = 100) -> Dict[str, Any]:
+        """Get a random sample of the graph for visualization."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/graph/sample",
+                json={"limit": limit},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to sample graph: {e}")  # noqa: B904
+
     def add_edge(self, from_node: int, to_node: int, relation: str, weight: float = 1.0) -> bool:
         """Add an edge between two nodes."""
-        raise RiceDBError("Add edge is not supported via HTTP transport. Use gRPC.")
+        try:
+            response = self.session.post(
+                f"{self.base_url}/graph/edge",
+                json={
+                    "from": from_node,
+                    "to": to_node,
+                    "relation": relation,
+                    "weight": weight,
+                },
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to add edge: {e}")  # noqa: B904
 
     def get_neighbors(self, node_id: int, relation: Optional[str] = None) -> List[int]:
         """Get neighbors of a node."""
-        raise RiceDBError("Get neighbors is not supported via HTTP transport. Use gRPC.")
+        try:
+            payload = {"node_id": node_id}
+            if relation:
+                payload["relation"] = relation
+
+            response = self.session.post(
+                f"{self.base_url}/graph/neighbors",
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json().get("neighbors", [])
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to get neighbors: {e}")  # noqa: B904
 
     def traverse(self, start_node: int, max_depth: int = 1) -> List[int]:
         """Traverse the graph from a start node."""
-        raise RiceDBError("Traverse is not supported via HTTP transport. Use gRPC.")
+        try:
+            response = self.session.post(
+                f"{self.base_url}/graph/traverse",
+                json={"start": start_node, "max_depth": max_depth},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json().get("visited", [])
+        except requests.RequestException as e:
+            raise RiceDBError(f"Failed to traverse graph: {e}")  # noqa: B904
 
     def subscribe(
         self,

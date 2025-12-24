@@ -424,6 +424,18 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
+    def sample_graph(self, limit: int = 100) -> Dict[str, Any]:
+        """Get a random sample of the graph for visualization.
+
+        Args:
+            limit: Maximum number of nodes to return
+
+        Returns:
+            Dictionary with 'nodes' (list of IDs) and 'edges' (list of dicts)
+        """
+        pass
+
+    @abstractmethod
     def subscribe(
         self,
         filter_type: str = "all",
