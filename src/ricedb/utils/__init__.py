@@ -5,6 +5,7 @@ Utility functions for RiceDB client.
 from .embeddings import (
     DummyEmbeddingGenerator,
     EmbeddingGenerator,
+    HuggingFaceEmbeddingGenerator,
     OpenAIEmbeddingGenerator,
     SentenceTransformersEmbeddingGenerator,
 )
@@ -15,5 +16,6 @@ __all__ = [
     "DummyEmbeddingGenerator",
     "SentenceTransformersEmbeddingGenerator",
     "OpenAIEmbeddingGenerator",
+    "HuggingFaceEmbeddingGenerator",
     "BitVector",
 ]
