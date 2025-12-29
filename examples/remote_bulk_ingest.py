@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Bulk Ingest Example for RiceDB (HDC).
+Remote Bulk Ingest Example for RiceDB (HDC).
 
-This example demonstrates how to ingest a large corpus of organizational data
-using efficient batch insertion with server-side HDC encoding.
+This example demonstrates how to ingest data to a remote RiceDB instance
+using the Python client with HTTP transport.
 
-Target Instance: Localhost or Remote
+Target Instance: Remote (api.ricedb-test-2.ricedb.tryrice.com)
 """
 
 import os
@@ -24,10 +24,11 @@ HOST = os.environ.get("HOST", "localhost")
 PORT = int(os.environ.get("PORT", "50051"))
 PASSWORD = os.environ.get("PASSWORD", "admin")
 SSL = os.environ.get("SSL", "false").lower() == "true"
+
 BATCH_SIZE = 100
 TOTAL_DOCS = 1000
 
-# Data Generation Helpers
+# Data Generation Helpers (from bulk_ingest_example.py)
 SOURCES = ["Notion", "Gmail", "Slack", "CRM", "Jira"]
 DEPARTMENTS = ["Engineering", "Sales", "HR", "Marketing", "Legal"]
 TOPICS = [
@@ -79,12 +80,12 @@ def generate_corpus(count: int) -> List[Dict[str, Any]]:
 
 
 def main():
-    print("🍚 RiceDB Bulk Ingest Example (HDC)\n")
+    print("🍚 RiceDB Remote Bulk Ingest Example\n")
 
     # 1. Connect
     print(f"1️⃣  Connecting to {HOST}:{PORT}...")
-    # Defaulting to gRPC for bulk ingest as it is usually faster/streaming
-    client = RiceDBClient(HOST, port=PORT)
+    # Using transport="http" to match the behavior of scripts/bulk_insert.py which uses requests
+    client = RiceDBClient(HOST, port=PORT, transport="http")
     client.ssl = SSL
 
     if not client.connect():
@@ -119,7 +120,8 @@ def main():
         batch_docs = []
 
         for j, doc in enumerate(batch):
-            node_id = 1_000_000 + total_inserted + j
+            # Start ID high to avoid conflicts with existing data
+            node_id = 2_000_000 + total_inserted + j
 
             # Restructure for batch_insert
             item = {
@@ -142,30 +144,36 @@ def main():
 
         except Exception as e:
             print(f"   ❌ Batch {i // BATCH_SIZE + 1} failed: {e}")
+            # Add small delay on error
+            time.sleep(1)
 
     duration = time.time() - start_time
     print(f"\n✅ Ingest Complete!")
     print(f"   Total Documents: {total_inserted}")
     print(f"   Time Taken: {duration:.2f}s")
-    print(f"   Rate: {total_inserted / duration:.2f} docs/sec")
+    if duration > 0:
+        print(f"   Rate: {total_inserted / duration:.2f} docs/sec")
 
     # 5. Verify Search
     print("\n4️⃣  Verifying with Search...")
     query = "server outage"
     print(f"   Query: '{query}'")
 
-    search_start = time.time()
-    results = client.search(query, user_id=1, k=3)
-    search_duration = time.time() - search_start
-    print(f"   Search took {search_duration:.4f}s")
+    try:
+        search_start = time.time()
+        results = client.search(query, user_id=1, k=3)
+        search_duration = time.time() - search_start
+        print(f"   Search took {search_duration:.4f}s")
 
-    for i, res in enumerate(results, 1):
-        meta = res["metadata"]
-        # text is stored as 'stored_text' in metadata
-        text_preview = meta.get("stored_text", "")  # [:80]
-        print(
-            f"   {i}. [{meta.get('source', 'Unknown')}] {text_preview}... (Score: {res['similarity']:.4f})"
-        )
+        for i, res in enumerate(results, 1):
+            meta = res["metadata"]
+            # text is stored as 'stored_text' in metadata
+            text_preview = meta.get("stored_text", "")  # [:80]
+            print(
+                f"   {i}. [{meta.get('source', 'Unknown')}] {text_preview}... (Score: {res['similarity']:.4f})"
+            )
+    except Exception as e:
+        print(f"   ❌ Search failed: {e}")
 
     client.disconnect()
 

@@ -3,19 +3,29 @@
 Test script for Nested Overlays and Holographic Merge.
 """
 
+import os
 import time
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
     print("🔹 RiceDB Nested Overlays Test")
 
-    client = RiceDBClient("localhost")
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
     if not client.connect():
         print("❌ Failed to connect to RiceDB server")
         return
 
-    client.login("admin", "admin")
+    client.login("admin", PASSWORD)
 
     # 1. Create Base Node
     print("\n1. Inserting Base Node (ID 100)...")

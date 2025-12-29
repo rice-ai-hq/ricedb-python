@@ -9,9 +9,17 @@ This example demonstrates the "Working Memory" capabilities of RiceDB Cortex:
 4. Committing valid thoughts to long-term memory.
 """
 
-import time
 import os
+import time
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def print_section(title: str):
@@ -32,7 +40,8 @@ def main():
     print_section("RiceDB Cortex Demo")
 
     # Initialize client
-    client = RiceDBClient("localhost")
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
 
     if not client.connect():
         print("❌ Failed to connect to RiceDB server")
@@ -42,7 +51,7 @@ def main():
 
     # Authenticate
     try:
-        client.login("admin", "admin")
+        client.login("admin", PASSWORD)
         print_success("Authenticated")
     except Exception as e:
         print(f"❌ Login failed: {e}")

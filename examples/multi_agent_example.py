@@ -8,14 +8,24 @@ This example demonstrates:
 3. User-specific data isolation
 """
 
+import os
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
     print("🍚 RiceDB Python Client - Multi-User ACL Example\n")
 
     # Initialize client
-    client = RiceDBClient("localhost")
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
 
     # Connect to the server
     print("1️⃣  Connecting to RiceDB server...")
@@ -27,7 +37,7 @@ def main():
     # Authenticate as Admin
     print("   🔑 Logging in as Admin...")
     try:
-        client.login("admin", "admin")
+        client.login("admin", PASSWORD)
     except Exception as e:
         print(f"   ❌ Login failed: {e}")
         return
@@ -58,7 +68,8 @@ def main():
             print(f"   ✓ Created {name} (ID: {user_id})")
 
             # Create authenticated client for this user
-            u_client = RiceDBClient("localhost")
+            u_client = RiceDBClient(HOST, port=PORT)
+            u_client.ssl = SSL
             u_client.connect()
             u_client.login(name, info["pass"])
             user_clients[name] = u_client

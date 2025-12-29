@@ -8,8 +8,17 @@ This example demonstrates how to use the native Agent Memory feature to:
 3. Coordinate multiple agents using shared memory.
 """
 
+import os
 import time
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def print_section(title: str):
@@ -34,7 +43,8 @@ def main():
 
     # Initialize client (auto-detects transport)
     # Ensure RiceDB server is running (e.g., make run-http or make run)
-    client = RiceDBClient("localhost")
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
 
     if not client.connect():
         print("❌ Failed to connect to RiceDB server")
@@ -45,7 +55,7 @@ def main():
     # Authenticate
     try:
         # Login
-        client.login("admin", "admin")
+        client.login("admin", PASSWORD)
         print_success("Authenticated as 'admin'")
     except Exception as e:
         print(f"❌ Authentication failed: {e}")

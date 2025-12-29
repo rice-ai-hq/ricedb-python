@@ -4,15 +4,25 @@ gRPC usage example for RiceDB Python client.
 Forces gRPC transport.
 """
 
+import os
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
 import time
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
     print("🍚 RiceDB Python Client - gRPC Usage Example\n")
 
     # Initialize client (force gRPC)
-    client = RiceDBClient("localhost", transport="grpc")
+    client = RiceDBClient(HOST, port=PORT, transport="grpc")
+    client.ssl = SSL
 
     # Connect to the server
     print("1️⃣  Connecting to RiceDB server (gRPC)...")
@@ -23,7 +33,7 @@ def main():
 
             # Login
             print("   🔑 Logging in...")
-            client.login("admin", "admin")
+            client.login("admin", PASSWORD)
             print("   ✓ Logged in successfully")
         else:
             print("   ❌ Failed to connect to RiceDB server")

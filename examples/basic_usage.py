@@ -8,15 +8,25 @@ This example demonstrates:
 3. Searching for similar documents using text queries
 """
 
+import os
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
 import time
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
     print("🍚 RiceDB Python Client - Basic Usage Example (HDC)\n")
 
     # Initialize client (auto-selects transport)
-    client = RiceDBClient("localhost")
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
 
     # Connect to the server
     print("1️⃣  Connecting to RiceDB server...")
@@ -27,7 +37,7 @@ def main():
 
             # Login as admin (default credentials)
             print("   🔑 Logging in...")
-            client.login("admin", "admin")
+            client.login("admin", PASSWORD)
             print("   ✓ Logged in successfully")
         else:
             print("   ❌ Failed to connect to RiceDB server")

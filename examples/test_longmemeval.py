@@ -7,19 +7,29 @@ and performs searches to verify retrieval accuracy.
 Each test case uses a unique user_id to isolate context (ACL).
 """
 
+import os
 import ijson
 import time
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
-    client = RiceDBClient("localhost", port=50051)
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
     if not client.connect():
         print("❌ Failed to connect")
         return
 
     try:
-        client.login("admin", "admin")
+        client.login("admin", PASSWORD)
     except Exception as e:
         print(f"❌ Login failed: {e}")
         return

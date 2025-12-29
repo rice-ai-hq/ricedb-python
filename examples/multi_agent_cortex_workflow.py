@@ -22,10 +22,19 @@ We simulate a team of AI agents working on a codebase stored in RiceDB.
     -   Base storage now reflects the Refactor.
 """
 
+import os
 import time
 import json
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def print_header(title: str):
@@ -58,11 +67,12 @@ def main():
     print_header("RiceDB Cortex: Multi-Agent Workflow Simulation")
 
     # 1. Setup & Connection
-    client = RiceDBClient("localhost")
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
     if not client.connect():
         print("❌ Failed to connect to RiceDB server")
         return
-    client.login("admin", "admin")
+    client.login("admin", PASSWORD)
 
     # 2. Initialize Base Reality (The "Main Branch")
     print_header("1. Initializing 'Main Branch' (Base Storage)")

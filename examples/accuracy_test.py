@@ -5,8 +5,17 @@ Accuracy Test for RiceDB (HDC).
 Tests various retrieval scenarios to ensure Bag-of-Words HDC encoding works as expected.
 """
 
+import os
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
 import time
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def print_result(name, passed, detail=""):
@@ -16,13 +25,14 @@ def print_result(name, passed, detail=""):
 
 def main():
     print("🍚 RiceDB Accuracy Test\n")
-    client = RiceDBClient("localhost", port=50051)
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
     if not client.connect():
         print("❌ Connection failed")
         return
 
     try:
-        client.login("admin", "admin")
+        client.login("admin", PASSWORD)
     except Exception as e:
         print(f"❌ Login failed: {e}")
         return

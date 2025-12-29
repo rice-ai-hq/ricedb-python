@@ -7,23 +7,31 @@ deployed on Kubernetes with Nginx Ingress.
 """
 
 import os
+from dotenv import load_dotenv
 from ricedb.client.grpc_client import GrpcRiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
     print("🍚 RiceDB Remote Connection Example\n")
-
-    # Configuration from environment or defaults
-    HOST = os.environ.get("RICEDB_HOST", "grpc.ricedb-test-2.ricedb.tryrice.com")
-    PORT = int(os.environ.get("RICEDB_PORT", "80"))
-    PASSWORD = os.environ.get("RICEDB_PASSWORD", "58c4e3a35d0f1188546995f16c14260c")
-    SSL = os.environ.get("RICEDB_SSL", "false").lower() == "true"
 
     print(f"1️⃣  Connecting to {HOST}:{PORT} (SSL={SSL})...")
 
     # Initialize client directly to see errors
     client = GrpcRiceDBClient(host=HOST, port=PORT)
     client.ssl = SSL
+
+    # Try with certifi properly
+    import certifi
+    import os
+
+    os.environ["GRPC_DEFAULT_SSL_ROOTS_FILE_PATH"] = certifi.where()
 
     try:
         # Calling connect directly will raise exception if it fails

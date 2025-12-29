@@ -4,14 +4,24 @@ HTTP usage example for RiceDB Python client.
 Forces HTTP transport.
 """
 
+import os
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
     print("🍚 RiceDB Python Client - HTTP Usage Example\n")
 
     # Initialize client (force HTTP)
-    client = RiceDBClient("localhost", transport="http")
+    client = RiceDBClient(HOST, port=PORT, transport="http")
+    client.ssl = SSL
 
     # Connect to the server
     print("1️⃣  Connecting to RiceDB server (HTTP)...")
@@ -22,7 +32,7 @@ def main():
 
             # Login
             print("   🔑 Logging in...")
-            client.login("admin", "admin")
+            client.login("admin", PASSWORD)
             print("   ✓ Logged in successfully")
         else:
             print("   ❌ Failed to connect to RiceDB server")

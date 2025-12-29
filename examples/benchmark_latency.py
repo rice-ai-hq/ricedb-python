@@ -3,9 +3,18 @@
 Benchmark Latency and Accuracy for RiceDB (HDC).
 """
 
+import os
 import time
 import statistics
+from dotenv import load_dotenv
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def measure_latency(func, iterations=100):
@@ -19,13 +28,14 @@ def measure_latency(func, iterations=100):
 
 def main():
     print("🍚 RiceDB Benchmark (HDC)\n")
-    client = RiceDBClient("localhost", port=50051)
+    client = RiceDBClient(HOST, port=PORT)
+    client.ssl = SSL
     if not client.connect():
         print("❌ Connection failed")
         return
 
     try:
-        client.login("admin", "admin")
+        client.login("admin", PASSWORD)
     except Exception as e:
         print(f"❌ Login failed: {e}")
         return

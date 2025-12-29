@@ -9,13 +9,22 @@ This example demonstrates how to:
 4. Search with ACL filtering (User context)
 """
 
+import os
 import sys
 import time
+from dotenv import load_dotenv
 
 # Add the ricedb package to the path
 sys.path.insert(0, "../src")
 
 from ricedb import RiceDBClient
+
+load_dotenv()
+
+HOST = os.environ.get("HOST", "localhost")
+PORT = int(os.environ.get("PORT", "50051"))
+PASSWORD = os.environ.get("PASSWORD", "admin")
+SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def print_section(title: str):
@@ -45,7 +54,25 @@ def main():
 
     # Initialize admin client
     print_info("Connecting as Admin...")
-    admin_client = RiceDBClient("localhost", port=3000, transport="http")
+    # ACL Management is typically done via HTTP admin client on port 3000 by default,
+    # but here we use main port/transport from env
+    admin_client = RiceDBClient(
+        HOST, port=PORT, transport="http"
+    )  # Force HTTP for admin ops if needed or use main transport
+    # Actually most examples use main client. Let's use env config.
+    # Note: multi_user_acl.py used port=3000 hardcoded.
+    # If the user sets PORT=50051 (gRPC), we should respect it or use a separate admin port var?
+    # For simplicity, let's assume HOST/PORT points to the service we want to use.
+    # But if transport="http" is hardcoded, it expects HTTP port.
+    # Let's try to infer or just use provided PORT.
+
+    # If user provided 50051 (gRPC), force http might fail if it's strictly gRPC port?
+    # RiceDB usually exposes both?
+    # Let's trust the env vars. If SSL=true, it might be remote.
+
+    # Update: using standard client init
+    admin_client = RiceDBClient(HOST, port=PORT, transport="http")
+    admin_client.ssl = SSL
 
     try:
         if not admin_client.connect():
@@ -55,7 +82,7 @@ def main():
         # Login as admin (default credentials if not changed)
         # In a real scenario, these would come from env vars or secure storage
         try:
-            admin_client.login("admin", "admin")
+            admin_client.login("admin", PASSWORD)
             print_success("Logged in as Admin")
         except Exception as e:
             print_error(f"Admin login failed: {e}")
@@ -88,7 +115,8 @@ def main():
                 print_success(f"Created {name} (ID: {user_id})")
 
                 # Create client for this user
-                client = RiceDBClient("localhost", port=3000, transport="http")
+                client = RiceDBClient(HOST, port=PORT, transport="http")
+                client.ssl = SSL
                 client.connect()
                 client.login(name, info["pass"])
                 user_clients[name] = client
