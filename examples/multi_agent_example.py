@@ -9,7 +9,6 @@ This example demonstrates:
 """
 
 from ricedb import RiceDBClient
-from ricedb.utils import DummyEmbeddingGenerator
 
 
 def main():
@@ -69,7 +68,6 @@ def main():
 
     # Prepare documents for each user
     print("\n3️⃣  Preparing user-specific documents...")
-    embedding_gen = DummyEmbeddingGenerator()
 
     documents_by_user = {
         "alice": [  # Alice - Finance Manager
@@ -112,10 +110,10 @@ def main():
 
         for doc in docs:
             try:
-                # We use insert_text. Note that user_id param is ignored by server for ownership,
+                # We use insert. Note that user_id param is ignored by server for ownership,
                 # but might be used by client logic if we pass it.
                 # Since u_client is authenticated as user, they become the owner.
-                result = u_client.insert_text(
+                result = u_client.insert(
                     node_id=doc["id"],
                     text=doc["text"],
                     metadata={
@@ -123,7 +121,6 @@ def main():
                         "owner": user_name,
                         "department": users[user_name]["dept"],
                     },
-                    embedding_generator=embedding_gen,
                 )
                 print(f"     ✓ {doc['text']} ({doc['type']})")
             except Exception as e:
@@ -141,10 +138,10 @@ def main():
         print(f"   Query: '{search_query}'")
 
         try:
-            results = u_client.search_text(
+            results = u_client.search(
                 query=search_query,
-                embedding_generator=embedding_gen,
                 k=5,
+                user_id=user_id,
             )
 
             print(f"   Found {len(results)} results:")
@@ -169,7 +166,7 @@ def main():
     # Alice trying to search Bob's documents
     print(f"\n   Alice searching for 'API' (Bob's docs):")
     try:
-        results = alice_client.search_text(query="API", embedding_generator=embedding_gen, k=5)
+        results = alice_client.search(query="API", k=5, user_id=users["alice"]["id"])
         print(f"   Alice found {len(results)} API-related documents")
         # Should find 0 if ACL is working properly
     except Exception as e:
@@ -178,7 +175,7 @@ def main():
     # Bob searching for his own API documents
     print(f"\n   Bob searching for 'API':")
     try:
-        results = bob_client.search_text(query="API", embedding_generator=embedding_gen, k=5)
+        results = bob_client.search(query="API", k=5, user_id=users["bob"]["id"])
         print(f"   Bob found {len(results)} API-related documents:")
         for result in results:
             metadata = result["metadata"]
@@ -194,11 +191,10 @@ def main():
         shared_text = "Company Holiday Schedule 2024"
         shared_id = 9999
 
-        alice_client.insert_text(
+        alice_client.insert(
             node_id=shared_id,
             text=shared_text,
             metadata={"type": "Company Policy", "access": "all", "shared": True},
-            embedding_generator=embedding_gen,
         )
         print(f"   ✓ Alice inserted '{shared_text}'")
 
@@ -213,10 +209,10 @@ def main():
         # Each user should now be able to find it
         print("\n   All users searching for 'holiday schedule':")
         for user_name, u_client in user_clients.items():
-            results = u_client.search_text(
+            results = u_client.search(
                 query="holiday schedule",
-                embedding_generator=embedding_gen,
                 k=3,
+                user_id=users[user_name]["id"],
             )
             print(f"   - {user_name.title()}: Found {len(results)} result(s)")
 

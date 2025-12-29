@@ -5,7 +5,6 @@ Forces HTTP transport.
 """
 
 from ricedb import RiceDBClient
-from ricedb.utils import DummyEmbeddingGenerator
 
 
 def main():
@@ -36,13 +35,11 @@ def main():
     # ... simplified for brevity, just one insert/search
 
     print("\n2️⃣  Test Insert...")
-    embedding_gen = DummyEmbeddingGenerator(dimensions=384)
     try:
-        result = client.insert_text(
+        result = client.insert(
             node_id=1,
             text="HTTP Test Document",
             metadata={"test": "http"},
-            embedding_generator=embedding_gen,
         )
         print(f"   ✓ Inserted: {result.get('success')}")
     except Exception as e:
@@ -50,7 +47,7 @@ def main():
 
     print("\n3️⃣  Test Search...")
     try:
-        results = client.search_text(query="test document", embedding_generator=embedding_gen)
+        results = client.search(query="test document", user_id=1)
         print(f"   ✓ Found {len(results)} results")
     except Exception as e:
         print(f"   ❌ Search error: {e}")

@@ -133,7 +133,7 @@ class TestGrpcRiceDBClient:
         mock_response.message = "OK"
         client.stub.Insert.return_value = mock_response
 
-        result = client.insert(123, [1.0], {"key": "val"})
+        result = client.insert(123, "test text", {"key": "val"})
 
         assert result["success"] is True
         assert result["node_id"] == 123
@@ -143,9 +143,9 @@ class TestGrpcRiceDBClient:
         mock_pb2.InsertRequest.assert_called()
         call_kwargs = mock_pb2.InsertRequest.call_args[1]
         assert call_kwargs["id"] == 123
-        assert call_kwargs["vector"] == [1.0]
+        assert call_kwargs["text"] == "test text"
 
-    def test_insert_failure(self, client):
+    def test_insert_failure(self, client, mock_pb2):
         """Test insert failure response."""
         client.stub = MagicMock()
         mock_response = MagicMock()
@@ -154,7 +154,7 @@ class TestGrpcRiceDBClient:
         client.stub.Insert.return_value = mock_response
 
         with pytest.raises(InsertError, match="Failed"):
-            client.insert(1, [1.0], {})
+            client.insert(1, "text", {})
 
     def test_search_success(self, client, mock_pb2):
         """Test successful search."""
@@ -170,7 +170,7 @@ class TestGrpcRiceDBClient:
         mock_response.results = [mock_result]
         client.stub.Search.return_value = mock_response
 
-        results = client.search([1.0], 1)
+        results = client.search("query text", 1)
 
         assert len(results) == 1
         assert results[0]["id"] == 1
@@ -186,8 +186,8 @@ class TestGrpcRiceDBClient:
         client.stub.BatchInsert.return_value = mock_response
 
         docs = [
-            {"id": 1, "vector": [1.0], "metadata": {}},
-            {"id": 2, "vector": [2.0], "metadata": {}},
+            {"id": 1, "text": "doc1", "metadata": {}},
+            {"id": 2, "text": "doc2", "metadata": {}},
         ]
 
         result = client.batch_insert(docs)
@@ -207,7 +207,7 @@ class TestGrpcRiceDBClient:
 
         client.stub.StreamSearch.return_value = iter([mock_result])
 
-        results = list(client.stream_search([1.0], 1))
+        results = list(client.stream_search("query text", 1))
         assert len(results) == 1
         assert results[0]["id"] == 1
 
@@ -300,3 +300,48 @@ class TestGrpcRiceDBClient:
         assert client.delete_user("user") is True
 
         mock_pb2.DeleteUserRequest.assert_called_with(username="user")
+
+    def test_create_session(self, client, mock_pb2):
+        """Test create session."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.session_id = "uuid"
+        client.stub.CreateSession.return_value = mock_response
+
+        assert client.create_session() == "uuid"
+
+    def test_snapshot_session(self, client, mock_pb2):
+        """Test snapshot session."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.success = True
+        client.stub.SnapshotSession.return_value = mock_response
+
+        assert client.snapshot_session("sess1", "path") is True
+
+    def test_load_session(self, client, mock_pb2):
+        """Test load session."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.session_id = "uuid"
+        client.stub.LoadSession.return_value = mock_response
+
+        assert client.load_session("path") == "uuid"
+
+    def test_commit_session(self, client, mock_pb2):
+        """Test commit session."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.success = True
+        client.stub.CommitSession.return_value = mock_response
+
+        assert client.commit_session("sess1") is True
+
+    def test_drop_session(self, client, mock_pb2):
+        """Test drop session."""
+        client.stub = MagicMock()
+        mock_response = MagicMock()
+        mock_response.success = True
+        client.stub.DropSession.return_value = mock_response
+
+        assert client.drop_session("sess1") is True

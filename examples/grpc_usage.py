@@ -5,7 +5,7 @@ Forces gRPC transport.
 """
 
 from ricedb import RiceDBClient
-from ricedb.utils import DummyEmbeddingGenerator
+import time
 
 
 def main():
@@ -32,17 +32,12 @@ def main():
         print(f"   ❌ Connection error: {e}")
         return
 
-    # Basic insert/search (same as basic_usage)
-    # ... simplified for brevity
-
     print("\n2️⃣  Test Insert...")
-    embedding_gen = DummyEmbeddingGenerator(dimensions=384)
     try:
-        result = client.insert_text(
+        result = client.insert(
             node_id=1,
-            text="gRPC Test Document",
-            metadata={"test": "grpc"},
-            embedding_generator=embedding_gen,
+            text="gRPC Test Document: Hyperdimensional Computing is efficient.",
+            metadata={"test": "grpc", "topic": "HDC"},
         )
         print(f"   ✓ Inserted: {result.get('success')}")
     except Exception as e:
@@ -50,19 +45,25 @@ def main():
 
     print("\n3️⃣  Test Search...")
     try:
-        results = client.search_text(query="test document", embedding_generator=embedding_gen)
+        # Search using text
+        results = client.search(query="efficient computing", user_id=1, k=5)
         print(f"   ✓ Found {len(results)} results")
+        for res in results:
+            print(f"     - ID: {res['id']}, Score: {res['similarity']:.4f}")
     except Exception as e:
         print(f"   ❌ Search error: {e}")
 
     # Streaming search (gRPC only)
     print("\n4️⃣  Test Stream Search...")
     try:
-        stream = client.stream_search(vector=embedding_gen.encode("test"), user_id=1)
+        # stream_search now takes query string
+        stream = client.stream_search(query="HDC", user_id=1)
         count = 0
+        print("   ✓ Streaming results:")
         for res in stream:
             count += 1
-        print(f"   ✓ Streamed {count} results")
+            print(f"     - Streamed ID: {res['id']}")
+        print(f"   ✓ Streamed {count} total results")
     except Exception as e:
         print(f"   ❌ Stream search error: {e}")
 

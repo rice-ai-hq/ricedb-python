@@ -118,17 +118,19 @@ class GrpcRiceDBClient(BaseRiceDBClient):
     def insert(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_id: int = 1,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content to insert
             metadata: Document metadata
             user_id: User ID for ACL
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             Insert response
@@ -139,9 +141,10 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         try:
             request = ricedb_pb2.InsertRequest(  # ty:ignore[unresolved-attribute]
                 id=node_id,
-                vector=vector,
+                text=text,
                 metadata=json.dumps(metadata).encode("utf-8"),
                 user_id=user_id,
+                session_id=session_id,
             )
             response = self.stub.Insert(request, metadata=self._metadata())
 
@@ -156,13 +159,16 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         except grpc.RpcError as e:
             raise InsertError(f"Insert request failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
-            vector: Query vector
+            query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             List of search results
@@ -171,7 +177,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             raise ConnectionError("Not connected to server")
 
         try:
-            request = ricedb_pb2.SearchRequest(vector=vector, user_id=user_id, k=k)  # ty:ignore[unresolved-attribute]
+            request = ricedb_pb2.SearchRequest(  # ty:ignore[unresolved-attribute]
+                query_text=query, user_id=user_id, k=k, session_id=session_id
+            )
             response = self.stub.Search(request, metadata=self._metadata())
 
             results = []
@@ -206,9 +214,11 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         def request_generator():
             for doc in documents:
                 doc_user_id = doc.get("user_id", user_id if user_id is not None else 1)
+                text = doc.get("text", "") or str(doc.get("vector", ""))
+
                 yield ricedb_pb2.InsertRequest(  # ty:ignore[unresolved-attribute]
                     id=doc["id"],
-                    vector=doc["vector"],
+                    text=text,
                     metadata=json.dumps(doc["metadata"]).encode("utf-8"),
                     user_id=doc_user_id,
                 )
@@ -219,13 +229,74 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         except grpc.RpcError as e:
             raise InsertError(f"Batch insert request failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
-    def stream_search(
-        self, vector: List[float], user_id: int, k: int = 10
-    ) -> Iterator[Dict[str, Any]]:
+    def create_session(self, parent_session_id: Optional[str] = None) -> str:
+        """Create a new scratchpad session."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        try:
+            request = ricedb_pb2.CreateSessionRequest()  # ty:ignore[unresolved-attribute]
+            if parent_session_id:
+                request.parent_session_id = parent_session_id
+
+            response = self.stub.CreateSession(
+                request,
+                metadata=self._metadata(),  # ty:ignore[unresolved-attribute]
+            )
+            return response.session_id
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Create session failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def snapshot_session(self, session_id: str, path: str) -> bool:
+        """Save session to disk."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        try:
+            request = ricedb_pb2.SnapshotSessionRequest(session_id=session_id, path=path)  # ty:ignore[unresolved-attribute]
+            response = self.stub.SnapshotSession(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Snapshot session failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def load_session(self, path: str) -> str:
+        """Load session from disk."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        try:
+            request = ricedb_pb2.LoadSessionRequest(path=path)  # ty:ignore[unresolved-attribute]
+            response = self.stub.LoadSession(request, metadata=self._metadata())
+            return response.session_id
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Load session failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def commit_session(self, session_id: str, merge_strategy: str = "overwrite") -> bool:
+        """Commit session changes to base storage."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        try:
+            request = ricedb_pb2.CommitSessionRequest(
+                session_id=session_id, merge_strategy=merge_strategy
+            )  # ty:ignore[unresolved-attribute]
+            response = self.stub.CommitSession(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Commit session failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def drop_session(self, session_id: str) -> bool:
+        """Discard session."""
+        if not self.stub:
+            raise ConnectionError("Not connected to server")
+        try:
+            request = ricedb_pb2.DropSessionRequest(session_id=session_id)  # ty:ignore[unresolved-attribute]
+            response = self.stub.DropSession(request, metadata=self._metadata())
+            return response.success
+        except grpc.RpcError as e:
+            raise RiceDBError(f"Drop session failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
+
+    def stream_search(self, query: str, user_id: int, k: int = 10) -> Iterator[Dict[str, Any]]:
         """Stream search results as they're found.
 
         Args:
-            vector: Query vector
+            query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
 
@@ -236,7 +307,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             raise ConnectionError("Not connected to server")
 
         try:
-            request = ricedb_pb2.SearchRequest(vector=vector, user_id=user_id, k=k)  # ty:ignore[unresolved-attribute]
+            request = ricedb_pb2.SearchRequest(query_text=query, user_id=user_id, k=k)  # ty:ignore[unresolved-attribute]
 
             for result in self.stub.StreamSearch(request, metadata=self._metadata()):
                 metadata = json.loads(result.metadata.decode("utf-8"))
@@ -279,37 +350,6 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         except grpc.RpcError as e:
             raise RiceDBError(f"SDM read failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
-    def batch_insert_texts(
-        self,
-        texts_metadata: List[Dict[str, Any]],
-        embedding_generator,
-        user_id: int = 1,
-    ) -> Dict[str, Any]:
-        """Batch insert documents with text embeddings.
-
-        Args:
-            texts_metadata: List of documents with text content
-            embedding_generator: Embedding generator instance
-            user_id: User ID for ACL
-
-        Returns:
-            Batch insert response
-        """
-        texts = [item["text"] for item in texts_metadata]
-        embeddings = embedding_generator.encode_batch(texts)
-
-        documents = []
-        for i, item in enumerate(texts_metadata):
-            doc = {
-                "id": item["id"],
-                "vector": embeddings[i],
-                "metadata": {k: v for k, v in item.items() if k not in ["id", "text"]},
-                "user_id": user_id,
-            }
-            documents.append(doc)
-
-        return self.batch_insert(documents)
-
     def create_user(self, username: str, password: str, role: str = "user") -> int:
         """Create a new user (Admin only)."""
         if not self.stub:
@@ -347,7 +387,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             metadata = json.loads(node.metadata.decode("utf-8"))
             return {
                 "id": node.id,
-                "vector": list(node.vector),
+                # "vector": list(node.vector), # Removed
                 "metadata": metadata,
             }
         except grpc.RpcError as e:
@@ -355,13 +395,15 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 return None
             raise RiceDBError(f"Get failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
-    def delete(self, node_id: int) -> bool:
+    def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID."""
         if not self.stub:
             raise ConnectionError("Not connected to server")
 
         try:
-            request = ricedb_pb2.DeleteNodeRequest(node_id=node_id)  # ty:ignore[unresolved-attribute]
+            request = ricedb_pb2.DeleteNodeRequest(  # ty:ignore[unresolved-attribute]
+                node_id=node_id, session_id=session_id
+            )
             response = self.stub.DeleteNode(request, metadata=self._metadata())
             return response.success
         except grpc.RpcError as e:
@@ -462,7 +504,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                     metadata = json.loads(event.node.metadata.decode("utf-8"))
                     result["node"] = {
                         "id": event.node.id,
-                        "vector": list(event.node.vector),
+                        # "vector": list(event.node.vector),
                         "metadata": metadata,
                     }
                 yield result
@@ -472,7 +514,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
     def insert_with_acl(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_permissions: List[tuple],
     ) -> Dict[str, Any]:
@@ -484,9 +526,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         # Fall back to standard insert with primary user
         if user_permissions:
             primary_user_id = user_permissions[0][0]
-            return self.insert(node_id, vector, metadata, primary_user_id)
+            return self.insert(node_id, text, metadata, primary_user_id)
 
-        return self.insert(node_id, vector, metadata)
+        return self.insert(node_id, text, metadata)
 
     def batch_grant(self, grants: List[tuple]) -> Dict[str, Any]:
         """Grant permissions to multiple users/nodes in batch.

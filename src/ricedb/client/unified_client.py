@@ -220,58 +220,83 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.delete_user(username)
 
-    def delete(self, node_id: int) -> bool:
+    def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID.
 
         Args:
             node_id: Node ID to delete
+            session_id: Optional Session ID for scratchpad (tombstoning)
 
         Returns:
             True if successful
         """
         client = self._get_client()
-        # gRPC delete doesn't take user_id, HTTP takes it but ignores it.
-        # We'll just pass node_id to comply with BaseRiceDBClient signature which we should have updated to include user_id=1?  # noqa: E501
-        # BaseRiceDBClient.delete(node_id) -> bool.
-        # HTTPRiceDBClient.delete(node_id, user_id=1) -> bool.
-        # GrpcRiceDBClient.delete(node_id) -> bool.
-        # So passing just node_id is safe if Grpc client doesn't require user_id.
-        return client.delete(node_id)
+        return client.delete(node_id, session_id=session_id)
 
     def insert(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_id: int = 1,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content to insert
             metadata: Document metadata
             user_id: User ID for ACL
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             Insert response
         """
         client = self._get_client()
-        return client.insert(node_id, vector, metadata, user_id)
+        return client.insert(node_id, text, metadata, user_id, session_id)
 
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
-            vector: Query vector
+            query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             List of search results
         """
         client = self._get_client()
-        return client.search(vector, user_id, k)
+        return client.search(query, user_id, k, session_id)
+
+    def create_session(self, parent_session_id: Optional[str] = None) -> str:
+        """Create a new scratchpad session."""
+        client = self._get_client()
+        return client.create_session(parent_session_id=parent_session_id)
+
+    def snapshot_session(self, session_id: str, path: str) -> bool:
+        """Save session to disk."""
+        client = self._get_client()
+        return client.snapshot_session(session_id, path)
+
+    def load_session(self, path: str) -> str:
+        """Load session from disk."""
+        client = self._get_client()
+        return client.load_session(path)
+
+    def commit_session(self, session_id: str, merge_strategy: str = "overwrite") -> bool:
+        """Commit session changes to base storage."""
+        client = self._get_client()
+        return client.commit_session(session_id, merge_strategy=merge_strategy)
+
+    def drop_session(self, session_id: str) -> bool:
+        """Discard session."""
+        client = self._get_client()
+        return client.drop_session(session_id)
 
     def batch_insert(
         self, documents: List[Dict[str, Any]], user_id: Optional[int] = None
@@ -288,11 +313,11 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.batch_insert(documents, user_id)
 
-    def stream_search(self, vector: List[float], user_id: int, k: int = 10):
+    def stream_search(self, query: str, user_id: int, k: int = 10):
         """Stream search results as they're found (gRPC only).
 
         Args:
-            vector: Query vector
+            query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
 
@@ -306,7 +331,7 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         if not isinstance(client, GrpcRiceDBClient):
             raise RiceDBError("Stream search is only available with gRPC transport")
-        return client.stream_search(vector, user_id, k)
+        return client.stream_search(query, user_id, k)
 
     def write_memory(self, address: Any, data: Any, user_id: int = 1) -> Dict[str, Any]:
         """Write to Sparse Distributed Memory.
@@ -405,7 +430,7 @@ class RiceDBClient(BaseRiceDBClient):
     def insert_with_acl(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_permissions: List[tuple],
     ) -> Dict[str, Any]:
@@ -413,7 +438,7 @@ class RiceDBClient(BaseRiceDBClient):
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content
             metadata: Document metadata
             user_permissions: List of (user_id, permissions_dict) tuples
 
@@ -425,7 +450,7 @@ class RiceDBClient(BaseRiceDBClient):
             gRPC will fall back to single-user insert.
         """
         client = self._get_client()
-        return client.insert_with_acl(node_id, vector, metadata, user_permissions)
+        return client.insert_with_acl(node_id, text, metadata, user_permissions)
 
     def get_transport_info(self) -> Dict[str, Any]:
         """Get information about the current transport.

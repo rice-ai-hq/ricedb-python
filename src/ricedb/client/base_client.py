@@ -85,11 +85,12 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def delete(self, node_id: int) -> bool:
+    def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID.
 
         Args:
             node_id: Node ID to delete
+            session_id: Optional Session ID for scratchpad (tombstoning)
 
         Returns:
             True if successful
@@ -100,17 +101,19 @@ class BaseRiceDBClient(ABC):
     def insert(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_id: int = 1,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content to insert (will be encoded on server)
             metadata: Document metadata
             user_id: User ID for ACL
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             Insert response
@@ -118,16 +121,81 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
-            vector: Query vector
+            query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             List of search results
+        """
+        pass
+
+    @abstractmethod
+    def create_session(self, parent_session_id: Optional[str] = None) -> str:
+        """Create a new scratchpad session.
+
+        Args:
+            parent_session_id: Optional Parent Session ID for nested overlays
+
+        Returns:
+            Session ID
+        """
+        pass
+
+    @abstractmethod
+    def snapshot_session(self, session_id: str, path: str) -> bool:
+        """Save session to disk.
+
+        Args:
+            session_id: Session ID to snapshot
+            path: File path to save snapshot to
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
+    def load_session(self, path: str) -> str:
+        """Load session from disk.
+
+        Args:
+            path: File path to load snapshot from
+
+        Returns:
+            Session ID
+        """
+        pass
+
+    @abstractmethod
+    def commit_session(self, session_id: str, merge_strategy: str = "overwrite") -> bool:
+        """Commit session changes to base storage.
+
+        Args:
+            session_id: Session ID to commit
+            merge_strategy: Merge strategy ("overwrite", "bundle", "average")
+
+        Returns:
+            True if successful
+        """
+        pass
+
+    @abstractmethod
+    def drop_session(self, session_id: str) -> bool:
+        """Discard session.
+
+        Args:
+            session_id: Session ID to drop
+
+        Returns:
+            True if successful
         """
         pass
 
@@ -166,61 +234,6 @@ class BaseRiceDBClient(ABC):
             Data BitVector
         """
         pass
-
-    def insert_text(
-        self,
-        node_id: int,
-        text: str,
-        metadata: Optional[Dict[str, Any]] = None,
-        embedding_generator=None,
-        user_id: int = 1,
-    ) -> Dict[str, Any]:
-        """Insert a document with text embedding.
-
-        Args:
-            node_id: Unique identifier for the document
-            text: Text content to embed
-            metadata: Additional document metadata
-            embedding_generator: Embedding generator instance
-            user_id: User ID for ACL
-
-        Returns:
-            Insert response
-        """
-        if embedding_generator is None:
-            from ..utils import DummyEmbeddingGenerator
-
-            embedding_generator = DummyEmbeddingGenerator()
-
-        if metadata is None:
-            metadata = {}
-
-        metadata["text"] = text
-        vector = embedding_generator.encode(text)
-
-        return self.insert(node_id, vector, metadata, user_id)
-
-    def search_text(
-        self, query: str, embedding_generator=None, user_id: int = 1, k: int = 10
-    ) -> List[Dict[str, Any]]:
-        """Search using text query.
-
-        Args:
-            query: Query text
-            embedding_generator: Embedding generator instance
-            user_id: User ID for ACL filtering
-            k: Number of results to return
-
-        Returns:
-            List of search results
-        """
-        if embedding_generator is None:
-            from ..utils import DummyEmbeddingGenerator
-
-            embedding_generator = DummyEmbeddingGenerator()
-
-        query_vector = embedding_generator.encode(query)
-        return self.search(query_vector, user_id, k)
 
     @abstractmethod
     def grant_permission(
@@ -281,7 +294,7 @@ class BaseRiceDBClient(ABC):
     def insert_with_acl(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_permissions: List[tuple],
     ) -> Dict[str, Any]:
@@ -289,7 +302,7 @@ class BaseRiceDBClient(ABC):
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content
             metadata: Document metadata
             user_permissions: List of (user_id, permissions_dict) tuples
 
@@ -440,16 +453,18 @@ class BaseRiceDBClient(ABC):
         self,
         filter_type: str = "all",
         node_id: Optional[int] = None,
-        vector: Optional[List[float]] = None,
+        vector: Optional[
+            List[float]
+        ] = None,  # Deprecated/Unused for semantic now unless updated to text
         threshold: float = 0.8,
     ) -> Iterator[Dict[str, Any]]:
         """Subscribe to real-time events.
 
         Args:
-            filter_type: Filter type ("all", "node", "vector")
+            filter_type: Filter type ("all", "node")
             node_id: Node ID (for "node" filter)
-            vector: Query vector (for "vector" filter)
-            threshold: Similarity threshold (for "vector" filter)
+            vector: Deprecated
+            threshold: Deprecated
 
         Yields:
             Events as dictionaries
@@ -473,7 +488,7 @@ class BaseRiceDBClient(ABC):
             doc_user_id = doc.get("user_id", user_id if user_id is not None else 1)
             result = self.insert(
                 node_id=doc["id"],
-                vector=doc["vector"],
+                text=doc.get("text", ""),
                 metadata=doc["metadata"],
                 user_id=doc_user_id,
             )

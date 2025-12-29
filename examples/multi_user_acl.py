@@ -107,7 +107,7 @@ def main():
         # She then grants permissions to others.
         result1 = alice_client.insert(
             node_id=1001,
-            vector=[0.1, 0.2, 0.3, 0.4, 0.5],
+            text="Q4 2023 Budget Report - Financial analysis and projections",
             metadata={
                 "title": "Q4 2023 Budget Report",
                 "type": "Financial Report",
@@ -126,7 +126,7 @@ def main():
         bob_client = user_clients["bob"]
         result2 = bob_client.insert(
             node_id=2001,
-            vector=[0.6, 0.7, 0.8, 0.9, 1.0],
+            text="API v2 Documentation - Endpoints and schemas",
             metadata={
                 "title": "API v2 Documentation",
                 "type": "Technical Documentation",
@@ -144,7 +144,7 @@ def main():
         # Test: Charlie reading Alice's report
         print_info("Charlie searching for reports...")
         charlie_client = user_clients["charlie"]
-        results = charlie_client.search([0.1, 0.2, 0.3, 0.4, 0.5])
+        results = charlie_client.search("budget report", user_id=users["charlie"]["id"])
         found = any(r["id"] == 1001 for r in results)
         if found:
             print_success("Charlie found the Budget Report")
@@ -153,7 +153,7 @@ def main():
 
         # Test: Bob reading Alice's report (Should fail)
         print_info("Bob searching for reports...")
-        results = bob_client.search([0.1, 0.2, 0.3, 0.4, 0.5])
+        results = bob_client.search("budget report", user_id=users["bob"]["id"])
         found = any(r["id"] == 1001 for r in results)
         if not found:
             print_success("Bob could NOT find the Budget Report (Correct)")
@@ -167,7 +167,7 @@ def main():
         alice_client.revoke_permission(1001, users["charlie"]["id"])
 
         # Verify
-        results = charlie_client.search([0.1, 0.2, 0.3, 0.4, 0.5])
+        results = charlie_client.search("budget report", user_id=users["charlie"]["id"])
         found = any(r["id"] == 1001 for r in results)
         if not found:
             print_success("Charlie can no longer see the report")

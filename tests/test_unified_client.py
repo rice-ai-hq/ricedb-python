@@ -231,3 +231,53 @@ class TestRiceDBClient:
             client._client.delete_user = MagicMock()
             client.delete_user("user")
             client._client.delete_user.assert_called_once()
+
+    def test_create_session_delegation(self):
+        """Test delegation of create_session method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.create_session = MagicMock(return_value="uuid")
+            assert client.create_session() == "uuid"
+            client._client.create_session.assert_called_once()
+
+    def test_snapshot_session_delegation(self):
+        """Test delegation of snapshot_session method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.snapshot_session = MagicMock(return_value=True)
+            assert client.snapshot_session("sess1", "path") is True
+            client._client.snapshot_session.assert_called_once_with("sess1", "path")
+
+    def test_load_session_delegation(self):
+        """Test delegation of load_session method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.load_session = MagicMock(return_value="uuid")
+            assert client.load_session("path") == "uuid"
+            client._client.load_session.assert_called_once_with("path")
+
+    def test_commit_session_delegation(self):
+        """Test delegation of commit_session method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.commit_session = MagicMock(return_value=True)
+            assert client.commit_session("sess1") is True
+            client._client.commit_session.assert_called_once_with("sess1")
+
+    def test_drop_session_delegation(self):
+        """Test delegation of drop_session method."""
+        with patch("ricedb.client.unified_client.GrpcRiceDBClient", new=MockGrpc):
+            client = RiceDBClient(transport="grpc")
+            client.connect()
+
+            client._client.drop_session = MagicMock(return_value=True)
+            assert client.drop_session("sess1") is True
+            client._client.drop_session.assert_called_once_with("sess1")

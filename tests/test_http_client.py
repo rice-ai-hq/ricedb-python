@@ -107,14 +107,14 @@ class TestHTTPRiceDBClient:
         mock_response.json.return_value = {"success": True, "message": "Inserted"}
         mock_session.post.return_value = mock_response
 
-        result = client.insert(1, [0.1, 0.2], {"key": "val"})
+        result = client.insert(1, "test text", {"key": "val"})
         assert result["success"] is True
 
         mock_session.post.assert_called_with(
             "http://localhost:3000/insert",
             json={
                 "id": 1,
-                "vector": [0.1, 0.2],
+                "text": "test text",
                 "metadata": {"key": "val"},
                 "user_id": 1,
             },
@@ -128,14 +128,14 @@ class TestHTTPRiceDBClient:
         mock_session.post.return_value = mock_response
 
         with pytest.raises(InsertError, match="Error"):
-            client.insert(1, [0.1], {})
+            client.insert(1, "text", {})
 
     def test_insert_request_error(self, client, mock_session):
         """Test insertion with request error."""
         mock_session.post.side_effect = requests.RequestException("Network error")
 
         with pytest.raises(InsertError, match="Insert request failed"):
-            client.insert(1, [0.1], {})
+            client.insert(1, "text", {})
 
     def test_search_success(self, client, mock_session):
         """Test successful search."""
@@ -143,13 +143,13 @@ class TestHTTPRiceDBClient:
         mock_response.json.return_value = [{"id": 1, "score": 0.9}]
         mock_session.post.return_value = mock_response
 
-        result = client.search([0.1, 0.2], user_id=1, k=5)
+        result = client.search("query text", user_id=1, k=5)
         assert len(result) == 1
         assert result[0]["id"] == 1
 
         mock_session.post.assert_called_with(
             "http://localhost:3000/search",
-            json={"vector": [0.1, 0.2], "user_id": 1, "k": 5},
+            json={"query": "query text", "user_id": 1, "k": 5},
             timeout=30,
         )
 
@@ -158,7 +158,7 @@ class TestHTTPRiceDBClient:
         mock_session.post.side_effect = requests.RequestException("Error")
 
         with pytest.raises(SearchError, match="Search request failed"):
-            client.search([0.1], 1)
+            client.search("query", 1)
 
     def test_batch_insert(self, client, mock_session):
         """Test batch insert."""
@@ -307,3 +307,70 @@ class TestHTTPRiceDBClient:
         """Test insert with ACL with empty user list."""
         with pytest.raises(ValueError, match="At least one user permission"):
             client.insert_with_acl(1, [0.1], {}, [])
+
+    def test_create_session(self, client, mock_session):
+        """Test create session."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True, "session_id": "uuid"}
+        mock_session.post.return_value = mock_response
+
+        assert client.create_session() == "uuid"
+
+        mock_session.post.assert_called_with(
+            "http://localhost:3000/session/create",
+            timeout=30,
+        )
+
+    def test_snapshot_session(self, client, mock_session):
+        """Test snapshot session."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_session.post.return_value = mock_response
+
+        assert client.snapshot_session("sess1", "path") is True
+
+        mock_session.post.assert_called_with(
+            "http://localhost:3000/session/sess1/snapshot",
+            json={"path": "path"},
+            timeout=30,
+        )
+
+    def test_load_session(self, client, mock_session):
+        """Test load session."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True, "session_id": "uuid"}
+        mock_session.post.return_value = mock_response
+
+        assert client.load_session("path") == "uuid"
+
+        mock_session.post.assert_called_with(
+            "http://localhost:3000/session/load",
+            json={"path": "path"},
+            timeout=30,
+        )
+
+    def test_commit_session(self, client, mock_session):
+        """Test commit session."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_session.post.return_value = mock_response
+
+        assert client.commit_session("sess1") is True
+
+        mock_session.post.assert_called_with(
+            "http://localhost:3000/session/sess1/commit",
+            timeout=30,
+        )
+
+    def test_drop_session(self, client, mock_session):
+        """Test drop session."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_session.delete.return_value = mock_response
+
+        assert client.drop_session("sess1") is True
+
+        mock_session.delete.assert_called_with(
+            "http://localhost:3000/session/sess1/drop",
+            timeout=30,
+        )

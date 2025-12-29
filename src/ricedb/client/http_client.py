@@ -98,19 +98,24 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         except requests.RequestException as e:
             raise AuthenticationError(f"Delete user failed: {e}")  # noqa: B904
 
-    def delete(self, node_id: int, user_id: int = 1) -> bool:
+    def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID.
 
         Args:
             node_id: Node ID to delete
-            user_id: User ID (unused, kept for compatibility)
+            session_id: Optional Session ID for scratchpad (tombstoning)
 
         Returns:
             True if successful
         """
         try:
+            params = {}
+            if session_id:
+                params["session_id"] = session_id
+
             response = self.session.delete(
                 f"{self.base_url}/node/{node_id}",
+                params=params,
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -153,30 +158,36 @@ class HTTPRiceDBClient(BaseRiceDBClient):
     def insert(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_id: int = 1,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content to insert
             metadata: Document metadata
             user_id: User ID for ACL
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             Insert response
         """
         try:
+            payload = {
+                "id": node_id,
+                "text": text,
+                "metadata": metadata,
+                "user_id": user_id,
+            }
+            if session_id:
+                payload["session_id"] = session_id
+
             response = self.session.post(
                 f"{self.base_url}/insert",
-                json={
-                    "id": node_id,
-                    "vector": vector,
-                    "metadata": metadata,
-                    "user_id": user_id,
-                },
+                json=payload,
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -189,27 +200,102 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         except requests.RequestException as e:
             raise InsertError(f"Insert request failed: {e}")  # noqa: B904
 
-    def search(self, vector: List[float], user_id: int, k: int = 10) -> List[Dict[str, Any]]:
+    def search(
+        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
         Args:
-            vector: Query vector
+            query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
+            session_id: Optional Session ID for working memory overlay
 
         Returns:
             List of search results
         """
         try:
+            payload = {"query": query, "user_id": user_id, "k": k}
+            if session_id:
+                payload["session_id"] = session_id
+
             response = self.session.post(
                 f"{self.base_url}/search",
-                json={"vector": vector, "user_id": user_id, "k": k},
+                json=payload,
                 timeout=self.timeout,
             )
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
             raise SearchError(f"Search request failed: {e}")  # noqa: B904
+
+    def create_session(self, parent_session_id: Optional[str] = None) -> str:
+        """Create a new scratchpad session."""
+        try:
+            payload = {}
+            if parent_session_id:
+                payload["parent_session_id"] = parent_session_id
+
+            response = self.session.post(
+                f"{self.base_url}/session/create",
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()["session_id"]
+        except requests.RequestException as e:
+            raise RiceDBError(f"Create session failed: {e}")  # noqa: B904
+
+    def snapshot_session(self, session_id: str, path: str) -> bool:
+        """Save session to disk."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/session/{session_id}/snapshot",
+                json={"path": path},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            raise RiceDBError(f"Snapshot session failed: {e}")  # noqa: B904
+
+    def load_session(self, path: str) -> str:
+        """Load session from disk."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/session/load",
+                json={"path": path},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()["session_id"]
+        except requests.RequestException as e:
+            raise RiceDBError(f"Load session failed: {e}")  # noqa: B904
+
+    def commit_session(self, session_id: str, merge_strategy: str = "overwrite") -> bool:
+        """Commit session changes to base storage."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/session/{session_id}/commit",
+                json={"merge_strategy": merge_strategy},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            raise RiceDBError(f"Commit session failed: {e}")  # noqa: B904
+
+    def drop_session(self, session_id: str) -> bool:
+        """Discard session."""
+        try:
+            response = self.session.delete(
+                f"{self.base_url}/session/{session_id}/drop",
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return True
+        except requests.RequestException as e:
+            raise RiceDBError(f"Drop session failed: {e}")  # noqa: B904
 
     def batch_insert(
         self, documents: List[Dict[str, Any]], user_id: Optional[int] = None
@@ -227,10 +313,12 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             payload = []
             for doc in documents:
                 doc_user_id = doc.get("user_id", user_id if user_id is not None else 1)
+                # Handle both 'text' and legacy 'vector' fields (assuming vector contains text if present)
+                text = doc.get("text", "") or str(doc.get("vector", ""))
                 payload.append(
                     {
                         "id": doc["id"],
-                        "vector": doc["vector"],
+                        "text": text,
                         "metadata": doc["metadata"],
                         "user_id": doc_user_id,
                     }
@@ -325,7 +413,10 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         Returns:
             Delete response
         """
-        success = self.delete(node_id, user_id)
+        # Note: delete() signature changed, session_id is 2nd arg.
+        # But delete_node is wrapper, usually for admin ops or explicit delete.
+        # We invoke delete(node_id)
+        success = self.delete(node_id)
         return {"success": success, "message": f"Deleted node {node_id}"}
 
     def grant_permission(
@@ -346,7 +437,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
                 f"{self.base_url}/acl/grant",
                 json={
                     "node_id": node_id,
-                    "user_id": user_id,
+                    "target_user_id": user_id,
                     "permissions": permissions,
                 },
                 timeout=self.timeout,
@@ -369,7 +460,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         try:
             response = self.session.post(
                 f"{self.base_url}/acl/revoke",
-                json={"node_id": node_id, "user_id": user_id},
+                json={"node_id": node_id, "target_user_id": user_id},
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -452,7 +543,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
     def insert_with_acl(
         self,
         node_id: int,
-        vector: List[float],
+        text: str,
         metadata: Dict[str, Any],
         user_permissions: List[tuple],
     ) -> Dict[str, Any]:
@@ -464,7 +555,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
 
         Args:
             node_id: Unique identifier for the document
-            vector: Feature vector
+            text: Text content
             metadata: Document metadata
             user_permissions: List of (user_id, permissions_dict) tuples
 
@@ -481,7 +572,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         try:
             insert_response = self.insert(
                 node_id=node_id,
-                vector=vector,
+                text=text,
                 metadata=metadata,
                 user_id=primary_user_id,
             )
