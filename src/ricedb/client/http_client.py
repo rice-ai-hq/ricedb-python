@@ -98,6 +98,41 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         except requests.RequestException as e:
             raise AuthenticationError(f"Delete user failed: {e}")  # noqa: B904
 
+    def get_user(self, username: str) -> Dict[str, Any]:
+        """Get user details.
+
+        Args:
+            username: Username to fetch
+
+        Returns:
+            User details (username, user_id, role)
+        """
+        try:
+            response = self.session.get(
+                f"{self.base_url}/auth/users/{username}",
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise AuthenticationError(f"Get user failed: {e}")  # noqa: B904
+
+    def list_users(self) -> List[Dict[str, Any]]:
+        """List all users (Admin only).
+
+        Returns:
+            List of users
+        """
+        try:
+            response = self.session.get(
+                f"{self.base_url}/auth/users",
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise AuthenticationError(f"List users failed: {e}")  # noqa: B904
+
     def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID.
 
@@ -151,7 +186,11 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         try:
             response = self.session.get(f"{self.base_url}/health", timeout=self.timeout)
             response.raise_for_status()
-            return response.json()
+            try:
+                return response.json()
+            except ValueError:
+                # Handle plain text response
+                return {"status": response.text, "version": "unknown"}
         except requests.RequestException as e:
             raise ConnectionError(f"Health check failed: {e}")  # noqa: B904
 

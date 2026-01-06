@@ -374,6 +374,14 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         except grpc.RpcError as e:
             raise ConnectionError(f"Delete user failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
+    def get_user(self, username: str) -> Dict[str, Any]:
+        """Get user details."""
+        raise RiceDBError("Get user is not supported via gRPC transport. Use HTTP.")
+
+    def list_users(self) -> List[Dict[str, Any]]:
+        """List all users."""
+        raise RiceDBError("List users is not supported via gRPC transport. Use HTTP.")
+
     def get(self, node_id: int) -> Optional[Dict[str, Any]]:
         """Get a document by ID."""
         if not self.stub:

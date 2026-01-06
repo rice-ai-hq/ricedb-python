@@ -85,6 +85,27 @@ class BaseRiceDBClient(ABC):
         pass
 
     @abstractmethod
+    def get_user(self, username: str) -> Dict[str, Any]:
+        """Get user details.
+
+        Args:
+            username: Username to fetch
+
+        Returns:
+            User details (username, user_id, role)
+        """
+        pass
+
+    @abstractmethod
+    def list_users(self) -> List[Dict[str, Any]]:
+        """List all users (Admin only).
+
+        Returns:
+            List of users
+        """
+        pass
+
+    @abstractmethod
     def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID.
 

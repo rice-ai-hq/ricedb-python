@@ -220,6 +220,27 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.delete_user(username)
 
+    def get_user(self, username: str) -> Dict[str, Any]:
+        """Get user details.
+
+        Args:
+            username: Username to fetch
+
+        Returns:
+            User details (username, user_id, role)
+        """
+        client = self._get_client()
+        return client.get_user(username)
+
+    def list_users(self) -> List[Dict[str, Any]]:
+        """List all users (Admin only).
+
+        Returns:
+            List of users
+        """
+        client = self._get_client()
+        return client.list_users()
+
     def delete(self, node_id: int, session_id: Optional[str] = None) -> bool:
         """Delete a document by ID.
 
