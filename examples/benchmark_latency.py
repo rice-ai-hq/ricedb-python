@@ -27,21 +27,21 @@ def measure_latency(func, iterations=100):
 
 
 def main():
-    print("🍚 RiceDB Benchmark (HDC)\n")
+    print(" RiceDB Benchmark (HDC)\n")
     client = RiceDBClient(HOST, port=PORT)
     client.ssl = SSL
     if not client.connect():
-        print("❌ Connection failed")
+        print(" Connection failed")
         return
 
     try:
         client.login("admin", PASSWORD)
     except Exception as e:
-        print(f"❌ Login failed: {e}")
+        print(f" Login failed: {e}")
         return
 
     # 1. Ingest
-    print("1️⃣  Ingesting 100 documents...")
+    print("1  Ingesting 100 documents...")
     docs = []
     for i in range(100):
         docs.append(
@@ -56,10 +56,10 @@ def main():
     for doc in docs:
         client.insert(doc["id"], doc["text"], doc["metadata"])
     end = time.perf_counter()
-    print(f"   ✓ Ingested in {end - start:.4f}s ({(100 / (end - start)):.2f} docs/sec)")
+    print(f"    Ingested in {end - start:.4f}s ({(100 / (end - start)):.2f} docs/sec)")
 
     # 2. Search Latency
-    print("\n2️⃣  Benchmarking Search Latency (100 iterations)...")
+    print("\n2  Benchmarking Search Latency (100 iterations)...")
 
     def search_op():
         client.search("document number 50", user_id=1, k=1)
@@ -82,19 +82,19 @@ def main():
     print(f"   P99: {p99:.2f}ms")
 
     if avg < 20:
-        print("   ✅ Sub-20ms latency goal met!")
+        print("    Sub-20ms latency goal met!")
     else:
-        print("   ⚠️  Latency above 20ms target.")
+        print("     Latency above 20ms target.")
 
     # 3. Accuracy Test
-    print("\n3️⃣  Verifying Accuracy...")
+    print("\n3  Verifying Accuracy...")
     # HDC is approximate, but exact n-gram match should be high similarity
     results = client.search("document number 42", user_id=1, k=1)
     if results and results[0]["id"] == 42:
-        print(f"   ✅ Found document 42 correctly. Score: {results[0]['similarity']:.4f}")
+        print(f"    Found document 42 correctly. Score: {results[0]['similarity']:.4f}")
     else:
         print(
-            f"   ❌ Failed to find document 42. Top result: {results[0]['id'] if results else 'None'}"
+            f"    Failed to find document 42. Top result: {results[0]['id'] if results else 'None'}"
         )
         if results:
             print(f"      Top result meta: {results[0]['metadata']}")

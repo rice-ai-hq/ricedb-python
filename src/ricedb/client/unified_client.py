@@ -278,7 +278,12 @@ class RiceDBClient(BaseRiceDBClient):
         return client.insert(node_id, text, metadata, user_id, session_id)
 
     def search(
-        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+        self,
+        query: str,
+        user_id: int,
+        k: int = 10,
+        session_id: Optional[str] = None,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -287,12 +292,13 @@ class RiceDBClient(BaseRiceDBClient):
             user_id: User ID for ACL filtering
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
+            filter: Optional metadata filter
 
         Returns:
             List of search results
         """
         client = self._get_client()
-        return client.search(query, user_id, k, session_id)
+        return client.search(query, user_id, k, session_id, filter)
 
     def create_session(self, parent_session_id: Optional[str] = None) -> str:
         """Create a new scratchpad session."""

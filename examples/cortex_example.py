@@ -29,11 +29,11 @@ def print_section(title: str):
 
 
 def print_success(message: str):
-    print(f"✅ {message}")
+    print(f" {message}")
 
 
 def print_info(message: str):
-    print(f"ℹ️  {message}")
+    print(f"  {message}")
 
 
 def main():
@@ -44,7 +44,7 @@ def main():
     client.ssl = SSL
 
     if not client.connect():
-        print("❌ Failed to connect to RiceDB server")
+        print(" Failed to connect to RiceDB server")
         return
 
     print_success(f"Connected via {client.get_transport_info()['type'].upper()}")
@@ -54,7 +54,7 @@ def main():
         client.login("admin", PASSWORD)
         print_success("Authenticated")
     except Exception as e:
-        print(f"❌ Login failed: {e}")
+        print(f" Login failed: {e}")
         return
 
     # 1. Base Knowledge Setup
@@ -71,7 +71,7 @@ def main():
     if results and results[0]["id"] == base_id:
         print_success(f"Base verification: Found '{results[0]['metadata'].get('text', base_text)}'")
     else:
-        print("❌ Base verification failed")
+        print(" Base verification failed")
 
     # 2. Fork Reality (Start Session)
     print_section("2. Fork Reality (Session Start)")
@@ -129,7 +129,7 @@ def main():
         if meta.get("type") == "hypothetical":
             print_success(f"Session sees shadowed fact: '{meta.get('text')}'")
         else:
-            print(f"❌ Session saw base fact? {meta}")
+            print(f" Session saw base fact? {meta}")
 
     # Search for temp thought
     print_info("Searching for 'Grass' in Base...")
@@ -140,7 +140,7 @@ def main():
     if not found_in_base:
         print_success("Base does NOT see temporary thought.")
     else:
-        print("❌ Base saw temporary thought!")
+        print(" Base saw temporary thought!")
 
     print_info("Searching for 'Grass' in Session...")
     results_session_temp = client.search("grass color", user_id=1, k=1, session_id=session_id)
@@ -185,7 +185,7 @@ def main():
     if results_restored and results_restored[0]["metadata"].get("type") == "hypothetical":
         print_success("Restored session has shadowed data.")
     else:
-        print("❌ Restore failed to preserve data.")
+        print(" Restore failed to preserve data.")
 
     # 6. Commit
     print_section("6. Commit to Reality")
@@ -200,7 +200,7 @@ def main():
     if results_base_final and results_base_final[0]["metadata"].get("type") == "hypothetical":
         print_success("Base now contains the committed shadow fact.")
     else:
-        print("❌ Commit failed to update Base.")
+        print(" Commit failed to update Base.")
 
     results_base_temp_final = client.search("grass color", user_id=1, k=1)
     if results_base_temp_final and results_base_temp_final[0]["id"] == temp_id:

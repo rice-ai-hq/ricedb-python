@@ -79,35 +79,35 @@ def generate_corpus(count: int) -> List[Dict[str, Any]]:
 
 
 def main():
-    print("🍚 RiceDB Bulk Ingest Example (HDC)\n")
+    print(" RiceDB Bulk Ingest Example (HDC)\n")
 
     # 1. Connect
-    print(f"1️⃣  Connecting to {HOST}:{PORT}...")
+    print(f"1  Connecting to {HOST}:{PORT}...")
     # Defaulting to gRPC for bulk ingest as it is usually faster/streaming
     client = RiceDBClient(HOST, port=PORT)
     client.ssl = SSL
 
     if not client.connect():
-        print("   ❌ Failed to connect to RiceDB server")
+        print("    Failed to connect to RiceDB server")
         return
-    print(f"   ✓ Connected via {client.get_transport_info()['type'].upper()}")
+    print(f"    Connected via {client.get_transport_info()['type'].upper()}")
 
     # 2. Login
-    print("   🔑 Logging in...")
+    print("    Logging in...")
     try:
         client.login("admin", PASSWORD)
-        print("   ✓ Logged in successfully")
+        print("    Logged in successfully")
     except Exception as e:
-        print(f"   ❌ Login failed: {e}")
+        print(f"    Login failed: {e}")
         return
 
     # 3. Generate Data
-    print("\n2️⃣  Generating Data...")
+    print("\n2  Generating Data...")
     raw_docs = generate_corpus(TOTAL_DOCS)
-    print(f"   ✓ Generated {len(raw_docs)} documents")
+    print(f"    Generated {len(raw_docs)} documents")
 
     # 4. Bulk Ingest
-    print(f"\n3️⃣  Starting Bulk Ingest (Batch Size: {BATCH_SIZE})...")
+    print(f"\n3  Starting Bulk Ingest (Batch Size: {BATCH_SIZE})...")
     start_time = time.time()
     total_inserted = 0
 
@@ -137,20 +137,20 @@ def main():
             total_inserted += count
             if (i // BATCH_SIZE) % 1 == 0:
                 print(
-                    f"   ✓ Batch {i // BATCH_SIZE + 1}: Inserted {count} docs (Total: {total_inserted})"
+                    f"    Batch {i // BATCH_SIZE + 1}: Inserted {count} docs (Total: {total_inserted})"
                 )
 
         except Exception as e:
-            print(f"   ❌ Batch {i // BATCH_SIZE + 1} failed: {e}")
+            print(f"    Batch {i // BATCH_SIZE + 1} failed: {e}")
 
     duration = time.time() - start_time
-    print(f"\n✅ Ingest Complete!")
+    print(f"\n Ingest Complete!")
     print(f"   Total Documents: {total_inserted}")
     print(f"   Time Taken: {duration:.2f}s")
     print(f"   Rate: {total_inserted / duration:.2f} docs/sec")
 
     # 5. Verify Search
-    print("\n4️⃣  Verifying with Search...")
+    print("\n4  Verifying with Search...")
     query = "server outage"
     print(f"   Query: '{query}'")
 

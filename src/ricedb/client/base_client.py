@@ -143,7 +143,12 @@ class BaseRiceDBClient(ABC):
 
     @abstractmethod
     def search(
-        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+        self,
+        query: str,
+        user_id: int,
+        k: int = 10,
+        session_id: Optional[str] = None,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -152,6 +157,7 @@ class BaseRiceDBClient(ABC):
             user_id: User ID for ACL filtering
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
+            filter: Optional metadata filter
 
         Returns:
             List of search results

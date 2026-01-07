@@ -30,12 +30,12 @@ def print_section(title: str):
 
 def print_success(message: str):
     """Print a success message."""
-    print(f"✅ {message}")
+    print(f" {message}")
 
 
 def print_info(message: str):
     """Print an info message."""
-    print(f"ℹ️  {message}")
+    print(f"  {message}")
 
 
 def main():
@@ -47,7 +47,7 @@ def main():
     client.ssl = SSL
 
     if not client.connect():
-        print("❌ Failed to connect to RiceDB server")
+        print(" Failed to connect to RiceDB server")
         return
 
     print_success(f"Connected via {client.get_transport_info()['type'].upper()}")
@@ -58,7 +58,7 @@ def main():
         client.login("admin", PASSWORD)
         print_success("Authenticated as 'admin'")
     except Exception as e:
-        print(f"❌ Authentication failed: {e}")
+        print(f" Authentication failed: {e}")
         return
 
     # Scenario: Code Review Session

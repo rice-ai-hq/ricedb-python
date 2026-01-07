@@ -21,25 +21,25 @@ SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
-    print("🍚 RiceDB Python Client - Multi-User ACL Example\n")
+    print(" RiceDB Python Client - Multi-User ACL Example\n")
 
     # Initialize client
     client = RiceDBClient(HOST, port=PORT)
     client.ssl = SSL
 
     # Connect to the server
-    print("1️⃣  Connecting to RiceDB server...")
+    print("1  Connecting to RiceDB server...")
     if not client.connect():
-        print("   ❌ Failed to connect to RiceDB server")
+        print("    Failed to connect to RiceDB server")
         return
-    print(f"   ✓ Connected via {client.get_transport_info()['type'].upper()}")
+    print(f"    Connected via {client.get_transport_info()['type'].upper()}")
 
     # Authenticate as Admin
-    print("   🔑 Logging in as Admin...")
+    print("    Logging in as Admin...")
     try:
         client.login("admin", PASSWORD)
     except Exception as e:
-        print(f"   ❌ Login failed: {e}")
+        print(f"    Login failed: {e}")
         return
 
     # User configuration
@@ -51,7 +51,7 @@ def main():
     }
 
     # Create users and get real IDs
-    print("\n2️⃣  Creating users...")
+    print("\n2  Creating users...")
     users = {}
     user_clients = {}
 
@@ -65,7 +65,7 @@ def main():
 
             user_id = client.create_user(name, info["pass"], role="user")
             users[name] = {**info, "id": user_id}
-            print(f"   ✓ Created {name} (ID: {user_id})")
+            print(f"    Created {name} (ID: {user_id})")
 
             # Create authenticated client for this user
             u_client = RiceDBClient(HOST, port=PORT)
@@ -75,10 +75,10 @@ def main():
             user_clients[name] = u_client
 
         except Exception as e:
-            print(f"   ❌ Failed to create {name}: {e}")
+            print(f"    Failed to create {name}: {e}")
 
     # Prepare documents for each user
-    print("\n3️⃣  Preparing user-specific documents...")
+    print("\n3  Preparing user-specific documents...")
 
     documents_by_user = {
         "alice": [  # Alice - Finance Manager
@@ -112,7 +112,7 @@ def main():
     }
 
     # Insert documents for each user (using their own client)
-    print("\n4️⃣  Inserting documents with user-specific ACL...")
+    print("\n4  Inserting documents with user-specific ACL...")
     for user_name, docs in documents_by_user.items():
         user_id = users[user_name]["id"]
         u_client = user_clients[user_name]
@@ -133,12 +133,12 @@ def main():
                         "department": users[user_name]["dept"],
                     },
                 )
-                print(f"     ✓ {doc['text']} ({doc['type']})")
+                print(f"      {doc['text']} ({doc['type']})")
             except Exception as e:
-                print(f"     ❌ Failed to insert: {e}")
+                print(f"      Failed to insert: {e}")
 
     # Search as each user
-    print("\n5️⃣  Searching as each user (ACL-enforced)...")
+    print("\n5  Searching as each user (ACL-enforced)...")
     search_query = "guidelines"
 
     for user_name, user_info in users.items():
@@ -167,10 +167,10 @@ def main():
                 print("   (No accessible documents - ACL working!)")
 
         except Exception as e:
-            print(f"   ❌ Search error: {e}")
+            print(f"    Search error: {e}")
 
     # Cross-user access attempt
-    print("\n6️⃣  Testing cross-user access control...")
+    print("\n6  Testing cross-user access control...")
     alice_client = user_clients["alice"]
     bob_client = user_clients["bob"]
 
@@ -181,7 +181,7 @@ def main():
         print(f"   Alice found {len(results)} API-related documents")
         # Should find 0 if ACL is working properly
     except Exception as e:
-        print(f"   ❌ Error: {e}")
+        print(f"    Error: {e}")
 
     # Bob searching for his own API documents
     print(f"\n   Bob searching for 'API':")
@@ -193,10 +193,10 @@ def main():
             text = metadata.get("text", "No text")
             print(f"     - {text}")
     except Exception as e:
-        print(f"   ❌ Error: {e}")
+        print(f"    Error: {e}")
 
     # Shared document example (accessible by all)
-    print("\n7️⃣  Inserting a shared document...")
+    print("\n7  Inserting a shared document...")
     try:
         # Alice creates a document and shares it with everyone
         shared_text = "Company Holiday Schedule 2024"
@@ -207,10 +207,10 @@ def main():
             text=shared_text,
             metadata={"type": "Company Policy", "access": "all", "shared": True},
         )
-        print(f"   ✓ Alice inserted '{shared_text}'")
+        print(f"    Alice inserted '{shared_text}'")
 
         # Alice grants read permission to others
-        print("   ✓ Granting read access to Bob, Charlie, Diana...")
+        print("    Granting read access to Bob, Charlie, Diana...")
         for name in ["bob", "charlie", "diana"]:
             uid = users[name]["id"]
             alice_client.grant_permission(
@@ -228,16 +228,16 @@ def main():
             print(f"   - {user_name.title()}: Found {len(results)} result(s)")
 
     except Exception as e:
-        print(f"   ❌ Shared document error: {e}")
+        print(f"    Shared document error: {e}")
 
     # Cleanup
-    print("\n8️⃣  Cleanup...")
+    print("\n8  Cleanup...")
     for c in user_clients.values():
         c.disconnect()
     client.disconnect()
-    print("   ✓ Disconnected from server")
+    print("    Disconnected from server")
 
-    print("\n✅ Multi-user ACL example completed!")
+    print("\n Multi-user ACL example completed!")
 
 
 if __name__ == "__main__":

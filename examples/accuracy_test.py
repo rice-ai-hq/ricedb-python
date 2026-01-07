@@ -19,29 +19,29 @@ SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def print_result(name, passed, detail=""):
-    icon = "✅" if passed else "❌"
+    icon = "" if passed else ""
     print(f"   {icon} {name}: {detail}")
 
 
 def main():
-    print("🍚 RiceDB Accuracy Test\n")
+    print(" RiceDB Accuracy Test\n")
     client = RiceDBClient(HOST, port=PORT)
     client.ssl = SSL
     if not client.connect():
-        print("❌ Connection failed")
+        print(" Connection failed")
         return
 
     try:
         client.login("admin", PASSWORD)
     except Exception as e:
-        print(f"❌ Login failed: {e}")
+        print(f" Login failed: {e}")
         return
 
     # Clear memory/data? Ideally yes, but we might disrupt other tests.
     # We will use unique IDs to avoid conflict.
     base_id = 2000
 
-    print("1️⃣  Ingesting Test Corpus...")
+    print("1  Ingesting Test Corpus...")
     corpus = [
         (base_id + 1, "The quick brown fox jumps over the lazy dog.", "fox"),
         (base_id + 2, "A fast brown wolf leaps over the sleepy canine.", "wolf"),
@@ -53,9 +53,9 @@ def main():
     for node_id, text, tag in corpus:
         client.insert(node_id, text, {"tag": tag}, user_id=1)
 
-    print("   ✓ Ingested 5 documents")
+    print("    Ingested 5 documents")
 
-    print("\n2️⃣  Running Queries...")
+    print("\n2  Running Queries...")
 
     # Test 1: Exact keyword match
     results = client.search("brown fox", k=10, user_id=1)

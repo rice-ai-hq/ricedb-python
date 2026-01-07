@@ -160,7 +160,12 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             raise InsertError(f"Insert request failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
     def search(
-        self, query: str, user_id: int, k: int = 10, session_id: Optional[str] = None
+        self,
+        query: str,
+        user_id: int,
+        k: int = 10,
+        session_id: Optional[str] = None,
+        filter: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -169,6 +174,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             user_id: User ID for ACL filtering
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
+            filter: Optional metadata filter
 
         Returns:
             List of search results
@@ -177,8 +183,9 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             raise ConnectionError("Not connected to server")
 
         try:
+            filter_json = json.dumps(filter) if filter else ""
             request = ricedb_pb2.SearchRequest(  # ty:ignore[unresolved-attribute]
-                query_text=query, user_id=user_id, k=k, session_id=session_id
+                query_text=query, user_id=user_id, k=k, session_id=session_id, filter=filter_json
             )
             response = self.stub.Search(request, metadata=self._metadata())
 

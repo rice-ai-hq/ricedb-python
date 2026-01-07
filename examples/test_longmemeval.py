@@ -25,16 +25,16 @@ def main():
     client = RiceDBClient(HOST, port=PORT)
     client.ssl = SSL
     if not client.connect():
-        print("❌ Failed to connect")
+        print(" Failed to connect")
         return
 
     try:
         client.login("admin", PASSWORD)
     except Exception as e:
-        print(f"❌ Login failed: {e}")
+        print(f" Login failed: {e}")
         return
 
-    print("🍚 RiceDB LongMemEval Test\n")
+    print(" RiceDB LongMemEval Test\n")
 
     # Process first 5 items for demonstration
     limit = 5
@@ -56,7 +56,7 @@ def main():
                 # Use unique user_id per test case to isolate context (ACL feature)
                 user_id = 10000 + count
 
-                print(f"\n🧪 Test Case {count} (ID: {q_id})")
+                print(f"\n Test Case {count} (ID: {q_id})")
                 print(f"   Question: {question}")
                 print(f"   Expected Answer: {answer}")
 
@@ -87,8 +87,8 @@ def main():
                                     }
                                 )
 
-                print(f"   🎯 Expected Answer Doc IDs: {expected_doc_ids}")
-                print(f"   📥 Ingesting {len(docs)} documents for user {user_id}...")
+                print(f"    Expected Answer Doc IDs: {expected_doc_ids}")
+                print(f"    Ingesting {len(docs)} documents for user {user_id}...")
                 start_t = time.time()
 
                 # Batch insert in chunks
@@ -115,21 +115,21 @@ def main():
                         client.batch_insert(batch_docs)
                         total_ingested += len(chunk)
                     except Exception as e:
-                        print(f"   ❌ Batch failed: {e}")
+                        print(f"    Batch failed: {e}")
 
                 ingest_time = time.time() - start_t
                 rate = total_ingested / ingest_time if ingest_time > 0 else 0
                 print(
-                    f"   ✓ Ingested {total_ingested} docs in {ingest_time:.2f}s ({rate:.1f} docs/sec)"
+                    f"    Ingested {total_ingested} docs in {ingest_time:.2f}s ({rate:.1f} docs/sec)"
                 )
 
                 # Search
-                print("   🔍 Searching...")
+                print("    Searching...")
                 start_t = time.time()
                 results = client.search(question, k=3, user_id=user_id)
                 search_time = time.time() - start_t
 
-                print(f"   ✓ Found {len(results)} results in {search_time:.4f}s")
+                print(f"    Found {len(results)} results in {search_time:.4f}s")
 
                 for i, res in enumerate(results):
                     meta = res["metadata"]
@@ -140,7 +140,7 @@ def main():
                     node_id = res["id"]
 
                     is_expected = node_id in expected_doc_ids
-                    marker = "✅" if is_expected else "  "
+                    marker = "" if is_expected else "  "
 
                     print(
                         f"     {i + 1}. {marker} [{role}] ID: {node_id} - {snippet}... (Score: {score:.4f})"
@@ -148,12 +148,12 @@ def main():
 
                     # Heuristic check: does it contain answer?
                     if answer.lower() in text.lower():
-                        print(f"        ✨ Text contains answer string!")
+                        print(f"         Text contains answer string!")
 
     except FileNotFoundError:
-        print("❌ Dataset file 'datasets/longmemeval_s_cleaned.json' not found.")
+        print(" Dataset file 'datasets/longmemeval_s_cleaned.json' not found.")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f" Error: {e}")
 
     client.disconnect()
 

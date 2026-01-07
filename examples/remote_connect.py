@@ -19,9 +19,9 @@ SSL = os.environ.get("SSL", "false").lower() == "true"
 
 
 def main():
-    print("🍚 RiceDB Remote Connection Example\n")
+    print(" RiceDB Remote Connection Example\n")
 
-    print(f"1️⃣  Connecting to {HOST}:{PORT} (SSL={SSL})...")
+    print(f"1  Connecting to {HOST}:{PORT} (SSL={SSL})...")
 
     # Initialize client directly to see errors
     client = GrpcRiceDBClient(host=HOST, port=PORT)
@@ -36,25 +36,25 @@ def main():
     try:
         # Calling connect directly will raise exception if it fails
         client.connect()
-        print(f"   ✓ Connected via gRPC")
+        print(f"    Connected via gRPC")
 
         # Login
-        print("\n2️⃣  Logging in as Admin...")
+        print("\n2  Logging in as Admin...")
         try:
             client.login("admin", PASSWORD)
-            print("   ✓ Logged in successfully")
+            print("    Logged in successfully")
         except Exception as e:
-            print(f"   ❌ Login failed: {e}")
+            print(f"    Login failed: {e}")
             return
 
         # Check health
-        print("\n3️⃣  Checking server health...")
+        print("\n3  Checking server health...")
         health = client.health()
-        print(f"   ✓ Status: {health.get('status')}")
-        print(f"   ✓ Version: {health.get('version')}")
+        print(f"    Status: {health.get('status')}")
+        print(f"    Version: {health.get('version')}")
 
         # Basic operation
-        print("\n4️⃣  Performing test insert...")
+        print("\n4  Performing test insert...")
         try:
             result = client.insert_text(
                 node_id=999,
@@ -62,15 +62,15 @@ def main():
                 metadata={"source": "remote_script"},
                 user_id=1,
             )
-            print(f"   ✓ Insert result: {result.get('message', 'Success')}")
+            print(f"    Insert result: {result.get('message', 'Success')}")
         except Exception as e:
-            print(f"   ❌ Insert failed: {e}")
+            print(f"    Insert failed: {e}")
 
     except Exception as e:
-        print(f"   ❌ Error: {e}")
+        print(f"    Error: {e}")
     finally:
         client.disconnect()
-        print("\n   ✓ Disconnected")
+        print("\n    Disconnected")
 
 
 if __name__ == "__main__":

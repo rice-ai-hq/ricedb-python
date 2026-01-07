@@ -36,17 +36,17 @@ def print_section(title: str):
 
 def print_success(message: str):
     """Print a success message."""
-    print(f"✅ {message}")
+    print(f" {message}")
 
 
 def print_info(message: str):
     """Print an info message."""
-    print(f"ℹ️  {message}")
+    print(f"  {message}")
 
 
 def print_error(message: str):
     """Print an error message."""
-    print(f"❌ {message}")
+    print(f" {message}")
 
 
 def main():
