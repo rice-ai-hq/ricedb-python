@@ -261,6 +261,7 @@ class RiceDBClient(BaseRiceDBClient):
         metadata: Dict[str, Any],
         user_id: int = 1,
         session_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
@@ -270,12 +271,13 @@ class RiceDBClient(BaseRiceDBClient):
             metadata: Document metadata
             user_id: User ID for ACL
             session_id: Optional Session ID for working memory overlay
+            embedding: Optional pre-computed embedding vector
 
         Returns:
             Insert response
         """
         client = self._get_client()
-        return client.insert(node_id, text, metadata, user_id, session_id)
+        return client.insert(node_id, text, metadata, user_id, session_id, embedding)
 
     def search(
         self,
@@ -284,6 +286,7 @@ class RiceDBClient(BaseRiceDBClient):
         k: int = 10,
         session_id: Optional[str] = None,
         filter: Optional[Dict[str, Any]] = None,
+        query_embedding: Optional[List[float]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -293,12 +296,13 @@ class RiceDBClient(BaseRiceDBClient):
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
             filter: Optional metadata filter
+            query_embedding: Optional pre-computed query embedding vector
 
         Returns:
             List of search results
         """
         client = self._get_client()
-        return client.search(query, user_id, k, session_id, filter)
+        return client.search(query, user_id, k, session_id, filter, query_embedding)
 
     def create_session(self, parent_session_id: Optional[str] = None) -> str:
         """Create a new scratchpad session."""
@@ -340,13 +344,20 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         return client.batch_insert(documents, user_id)
 
-    def stream_search(self, query: str, user_id: int, k: int = 10):
+    def stream_search(
+        self,
+        query: str,
+        user_id: int,
+        k: int = 10,
+        query_embedding: Optional[List[float]] = None,
+    ):
         """Stream search results as they're found (gRPC only).
 
         Args:
             query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
+            query_embedding: Optional pre-computed query embedding vector
 
         Yields:
             Search results as they arrive
@@ -358,7 +369,7 @@ class RiceDBClient(BaseRiceDBClient):
         client = self._get_client()
         if not isinstance(client, GrpcRiceDBClient):
             raise RiceDBError("Stream search is only available with gRPC transport")
-        return client.stream_search(query, user_id, k)
+        return client.stream_search(query, user_id, k, query_embedding)
 
     def write_memory(self, address: Any, data: Any, user_id: int = 1) -> Dict[str, Any]:
         """Write to Sparse Distributed Memory.
@@ -580,9 +591,14 @@ class RiceDBClient(BaseRiceDBClient):
         node_id: Optional[int] = None,
         vector: Optional[List[float]] = None,
         threshold: float = 0.8,
+        query_text: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
         """Subscribe to real-time events."""
         client = self._get_client()
         return client.subscribe(
-            filter_type=filter_type, node_id=node_id, vector=vector, threshold=threshold
+            filter_type=filter_type,
+            node_id=node_id,
+            vector=vector,
+            threshold=threshold,
+            query_text=query_text,
         )

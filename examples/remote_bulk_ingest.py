@@ -84,8 +84,8 @@ def main():
 
     # 1. Connect
     print(f"1  Connecting to {HOST}:{PORT}...")
-    # Using transport="grpc"
-    client = RiceDBClient(HOST, port=PORT, transport="grpc")
+    # Using transport="auto" to allow fallback to HTTP if gRPC fails (e.g. wrong ingress)
+    client = RiceDBClient(HOST, port=PORT, transport="auto")
     client.ssl = SSL
 
     if not client.connect():

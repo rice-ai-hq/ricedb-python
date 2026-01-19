@@ -24,9 +24,8 @@ dependencies = ["requests>=2.32.5", "numpy>=1.20.0"]
 
 [project.optional-dependencies]
 grpc = ["grpcio>=1.76.0", "grpcio-tools>=1.76.0"]
-embeddings = ["sentence-transformers>=5.2.0", "torch>=2.0.0"]
-openai = ["openai>=1.0.0"]
-all = ["ricedb[grpc,embeddings,openai]"]
+embeddings = ["sentence-transformers>=2.2.0"]
+all = ["ricedb[grpc]", "ricedb[embeddings]"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -51,7 +50,10 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "B", "I"]
 ignore = []
-exclude = ["src/ricedb/protobuf/ricedb_pb2.py", "src/ricedb/protobuf/ricedb_pb2_grpc.py"]
+exclude = [
+    "src/ricedb/protobuf/ricedb_pb2.py",
+    "src/ricedb/protobuf/ricedb_pb2_grpc.py",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -62,4 +64,7 @@ addopts = "--cov=src/ricedb --cov-report=term-missing"
 dev = ["ruff>=0.14.9", "ty>=0.0.3"]
 
 [tool.pyright]
-exclude = ["src/ricedb/protobuf/ricedb_pb2.py", "src/ricedb/protobuf/ricedb_pb2_grpc.py"]
+exclude = [
+    "src/ricedb/protobuf/ricedb_pb2.py",
+    "src/ricedb/protobuf/ricedb_pb2_grpc.py",
+]

@@ -201,6 +201,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         metadata: Dict[str, Any],
         user_id: int = 1,
         session_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
@@ -210,6 +211,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             metadata: Document metadata
             user_id: User ID for ACL
             session_id: Optional Session ID for working memory overlay
+            embedding: Optional pre-computed embedding vector
 
         Returns:
             Insert response
@@ -221,6 +223,8 @@ class HTTPRiceDBClient(BaseRiceDBClient):
                 "metadata": metadata,
                 "user_id": user_id,
             }
+            if embedding:
+                payload["embedding"] = embedding
             if session_id:
                 payload["session_id"] = session_id
 
@@ -246,6 +250,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         k: int = 10,
         session_id: Optional[str] = None,
         filter: Optional[Dict[str, Any]] = None,
+        query_embedding: Optional[List[float]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -255,12 +260,15 @@ class HTTPRiceDBClient(BaseRiceDBClient):
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
             filter: Optional metadata filter
+            query_embedding: Optional pre-computed query embedding vector
 
         Returns:
             List of search results
         """
         try:
             payload = {"query": query, "user_id": user_id, "k": k}
+            if query_embedding:
+                payload["query_embedding"] = query_embedding
             if session_id:
                 payload["session_id"] = session_id
             if filter:
@@ -362,14 +370,15 @@ class HTTPRiceDBClient(BaseRiceDBClient):
                 doc_user_id = doc.get("user_id", user_id if user_id is not None else 1)
                 # Handle both 'text' and legacy 'vector' fields (assuming vector contains text if present)
                 text = doc.get("text", "") or str(doc.get("vector", ""))
-                payload.append(
-                    {
-                        "id": doc["id"],
-                        "text": text,
-                        "metadata": doc["metadata"],
-                        "user_id": doc_user_id,
-                    }
-                )
+                item = {
+                    "id": doc["id"],
+                    "text": text,
+                    "metadata": doc["metadata"],
+                    "user_id": doc_user_id,
+                }
+                if "embedding" in doc:
+                    item["embedding"] = doc["embedding"]
+                payload.append(item)
 
             response = self.session.post(
                 f"{self.base_url}/batch_insert", json=payload, timeout=self.timeout
@@ -781,6 +790,7 @@ class HTTPRiceDBClient(BaseRiceDBClient):
         node_id: Optional[int] = None,
         vector: Optional[List[float]] = None,
         threshold: float = 0.8,
+        query_text: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
         """Subscribe to real-time events."""
         raise RiceDBError("Subscribe is not supported via HTTP transport. Use gRPC.")

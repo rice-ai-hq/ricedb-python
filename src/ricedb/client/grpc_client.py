@@ -122,6 +122,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         metadata: Dict[str, Any],
         user_id: int = 1,
         session_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
@@ -131,6 +132,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             metadata: Document metadata
             user_id: User ID for ACL
             session_id: Optional Session ID for working memory overlay
+            embedding: Optional pre-computed embedding vector
 
         Returns:
             Insert response
@@ -145,6 +147,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
                 metadata=json.dumps(metadata).encode("utf-8"),
                 user_id=user_id,
                 session_id=session_id,
+                embedding=embedding or [],
             )
             response = self.stub.Insert(request, metadata=self._metadata())
 
@@ -166,6 +169,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         k: int = 10,
         session_id: Optional[str] = None,
         filter: Optional[Dict[str, Any]] = None,
+        query_embedding: Optional[List[float]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -175,6 +179,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
             filter: Optional metadata filter
+            query_embedding: Optional pre-computed query embedding vector
 
         Returns:
             List of search results
@@ -185,7 +190,12 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         try:
             filter_json = json.dumps(filter) if filter else ""
             request = ricedb_pb2.SearchRequest(  # ty:ignore[unresolved-attribute]
-                query_text=query, user_id=user_id, k=k, session_id=session_id, filter=filter_json
+                query_text=query,
+                user_id=user_id,
+                k=k,
+                session_id=session_id,
+                filter=filter_json,
+                query_embedding=query_embedding or [],
             )
             response = self.stub.Search(request, metadata=self._metadata())
 
@@ -222,12 +232,14 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             for doc in documents:
                 doc_user_id = doc.get("user_id", user_id if user_id is not None else 1)
                 text = doc.get("text", "") or str(doc.get("vector", ""))
+                embedding = doc.get("embedding", [])
 
                 yield ricedb_pb2.InsertRequest(  # ty:ignore[unresolved-attribute]
                     id=doc["id"],
                     text=text,
                     metadata=json.dumps(doc["metadata"]).encode("utf-8"),
                     user_id=doc_user_id,
+                    embedding=embedding,
                 )
 
         try:
@@ -299,13 +311,20 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         except grpc.RpcError as e:
             raise RiceDBError(f"Drop session failed: {e.details()}")  # ty:ignore[unresolved-attribute]  # noqa: B904
 
-    def stream_search(self, query: str, user_id: int, k: int = 10) -> Iterator[Dict[str, Any]]:
+    def stream_search(
+        self,
+        query: str,
+        user_id: int,
+        k: int = 10,
+        query_embedding: Optional[List[float]] = None,
+    ) -> Iterator[Dict[str, Any]]:
         """Stream search results as they're found.
 
         Args:
             query: Query text
             user_id: User ID for ACL filtering
             k: Number of results to return
+            query_embedding: Optional pre-computed query embedding vector
 
         Yields:
             Search results as they arrive
@@ -314,7 +333,12 @@ class GrpcRiceDBClient(BaseRiceDBClient):
             raise ConnectionError("Not connected to server")
 
         try:
-            request = ricedb_pb2.SearchRequest(query_text=query, user_id=user_id, k=k)  # ty:ignore[unresolved-attribute]
+            request = ricedb_pb2.SearchRequest(  # ty:ignore[unresolved-attribute]
+                query_text=query,
+                user_id=user_id,
+                k=k,
+                query_embedding=query_embedding or [],
+            )
 
             for result in self.stub.StreamSearch(request, metadata=self._metadata()):
                 metadata = json.loads(result.metadata.decode("utf-8"))
@@ -503,6 +527,7 @@ class GrpcRiceDBClient(BaseRiceDBClient):
         node_id: Optional[int] = None,
         vector: Optional[List[float]] = None,
         threshold: float = 0.8,
+        query_text: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
         """Subscribe to real-time events."""
         if not self.stub:
@@ -510,7 +535,11 @@ class GrpcRiceDBClient(BaseRiceDBClient):
 
         try:
             request = ricedb_pb2.SubscribeRequest(  # ty:ignore[unresolved-attribute]
-                filter_type=filter_type, node_id=node_id, vector=vector, threshold=threshold
+                filter_type=filter_type,
+                node_id=node_id,
+                vector=vector,
+                threshold=threshold,
+                query_text=query_text or "",
             )
 
             for event in self.stub.Subscribe(request, metadata=self._metadata()):

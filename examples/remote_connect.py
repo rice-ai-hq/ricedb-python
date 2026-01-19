@@ -56,7 +56,7 @@ def main():
         # Basic operation
         print("\n4  Performing test insert...")
         try:
-            result = client.insert_text(
+            result = client.insert(
                 node_id=999,
                 text="Remote connection test",
                 metadata={"source": "remote_script"},

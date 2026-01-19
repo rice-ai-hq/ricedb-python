@@ -3,6 +3,8 @@ Base abstract class for RiceDB clients.
 """
 
 from abc import ABC, abstractmethod
+import concurrent.futures
+import time
 from typing import Any, Dict, Iterator, List, Optional
 
 
@@ -126,15 +128,17 @@ class BaseRiceDBClient(ABC):
         metadata: Dict[str, Any],
         user_id: int = 1,
         session_id: Optional[str] = None,
+        embedding: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """Insert a document into RiceDB.
 
         Args:
             node_id: Unique identifier for the document
-            text: Text content to insert (will be encoded on server)
+            text: Text content to insert (will be encoded on server if embedding not provided)
             metadata: Document metadata
             user_id: User ID for ACL
             session_id: Optional Session ID for working memory overlay
+            embedding: Optional pre-computed embedding vector (skips server-side encoding)
 
         Returns:
             Insert response
@@ -149,6 +153,7 @@ class BaseRiceDBClient(ABC):
         k: int = 10,
         session_id: Optional[str] = None,
         filter: Optional[Dict[str, Any]] = None,
+        query_embedding: Optional[List[float]] = None,
     ) -> List[Dict[str, Any]]:
         """Search for similar documents.
 
@@ -158,6 +163,7 @@ class BaseRiceDBClient(ABC):
             k: Number of results to return
             session_id: Optional Session ID for working memory overlay
             filter: Optional metadata filter
+            query_embedding: Optional pre-computed query embedding vector
 
         Returns:
             List of search results
@@ -484,14 +490,16 @@ class BaseRiceDBClient(ABC):
             List[float]
         ] = None,  # Deprecated/Unused for semantic now unless updated to text
         threshold: float = 0.8,
+        query_text: Optional[str] = None,
     ) -> Iterator[Dict[str, Any]]:
         """Subscribe to real-time events.
 
         Args:
-            filter_type: Filter type ("all", "node")
+            filter_type: Filter type ("all", "node", "semantic")
             node_id: Node ID (for "node" filter)
             vector: Deprecated
-            threshold: Deprecated
+            threshold: Similarity threshold for semantic subscription
+            query_text: Query text for semantic subscription
 
         Yields:
             Events as dictionaries
@@ -522,3 +530,64 @@ class BaseRiceDBClient(ABC):
             results.append(result)
 
         return {"count": len(results), "results": results}
+
+    def fast_ingest(
+        self,
+        documents: List[Dict[str, Any]],
+        batch_size: int = 500,
+        max_workers: int = 4,
+        user_id: int = 1,
+    ) -> Dict[str, Any]:
+        """High-performance bulk ingestion using batches and concurrency.
+
+        Args:
+            documents: List of documents to insert
+            batch_size: Number of documents per batch
+            max_workers: Number of concurrent threads
+            user_id: User ID to own the documents
+
+        Returns:
+            Summary of ingestion (total_inserted, failed_batches, time_taken)
+        """
+        start_time = time.time()
+        total_inserted = 0
+        failed_batches = 0
+        errors = []
+
+        # Create batches
+        batches = [documents[i : i + batch_size] for i in range(0, len(documents), batch_size)]
+
+        def _process_batch(batch):
+            try:
+                # Delegate to transport-specific batch_insert
+                return self.batch_insert(batch, user_id=user_id)
+            except Exception as e:
+                return e
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all batches
+            future_to_batch = {executor.submit(_process_batch, batch): batch for batch in batches}
+
+            for future in concurrent.futures.as_completed(future_to_batch):
+                result = future.result()
+                if isinstance(result, Exception):
+                    failed_batches += 1
+                    # Store only first few errors to avoid flooding
+                    if len(errors) < 10:
+                        errors.append(str(result))
+                else:
+                    # Assume result has 'count'
+                    if isinstance(result, dict) and "count" in result:
+                        total_inserted += result["count"]
+                    else:
+                        # Fallback
+                        total_inserted += len(future_to_batch[future])
+
+        total_time = time.time() - start_time
+        return {
+            "total_inserted": total_inserted,
+            "failed_batches": failed_batches,
+            "errors": errors,
+            "time_taken": total_time,
+            "throughput": total_inserted / total_time if total_time > 0 else 0,
+        }
